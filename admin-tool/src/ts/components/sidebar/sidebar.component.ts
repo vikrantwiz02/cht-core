@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-import { AuthDirective } from '@admin-tool-directives/auth.directive';
+import { AuthDirective } from '@mm-directives/auth.directive';
 
 @Component({
   selector: 'app-sidebar',

@@ -15,6 +15,7 @@
       "es2016",
       "dom"
     ],
+    "types": ["jquery"],
     "allowSyntheticDefaultImports": true,
     "paths": {
       "@admin-tool-components/*": ["src/ts/components/*"],
@@ -22,7 +23,20 @@
       "@admin-tool-modules/*": ["src/ts/modules/*"],
       "@admin-tool-services/*": ["src/ts/services/*"],
       "@admin-tool-directives/*": ["src/ts/directives/*"],
-      "@admin-tool-providers/*": ["src/ts/providers/*"]
+      "@admin-tool-providers/*": ["src/ts/providers/*"],
+
+      "@mm-actions/*": ["../webapp/src/ts/actions/*"],
+      "@mm-components/*": ["../webapp/src/ts/components/*"],
+      "@mm-directives/*": ["../webapp/src/ts/directives/*"],
+      "@mm-effects/*": ["../webapp/src/ts/effects/*"],
+      "@mm-environments/*": ["../webapp/src/ts/environments/*"],
+      "@mm-modals/*": ["../webapp/src/ts/modals/*"],
+      "@mm-modules/*": ["../webapp/src/ts/modules/*"],
+      "@mm-pipes/*": ["../webapp/src/ts/pipes/*"],
+      "@mm-providers/*": ["../webapp/src/ts/providers/*"],
+      "@mm-reducers/*": ["../webapp/src/ts/reducers/*"],
+      "@mm-selectors/*": ["../webapp/src/ts/selectors/*"],
+      "@mm-services/*": ["../webapp/src/ts/services/*"]
     },
     "strictNullChecks": true,
     "alwaysStrict": true,

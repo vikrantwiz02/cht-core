@@ -7,7 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { CookieService } from 'ngx-cookie-service';
 
 import { AppRoutingModule } from './app-routing.module';
-import { SessionService } from '@admin-tool-services/session.service';
+import { SessionService } from '@mm-services/session.service';
 import { AppRouteGuardProvider } from '@admin-tool-providers/app-route.guard.provider';
 
 const initSession = (session: SessionService) => () => session.init();
