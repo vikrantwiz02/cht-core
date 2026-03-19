@@ -1,4 +1,6 @@
-const { expect } = require('chai');
+const chai = require('chai');
+const { expect } = chai;
+chai.should();
 const sinon = require('sinon');
 const { VIEWS } = require('@medic/constants');
 const registrationUtils = require('@medic/registration-utils');
@@ -441,7 +443,7 @@ describe('utils util', () => {
         .then(result => {
           result.should.deep.equal([{ id: 'report1' }, { id: 'report2' }]);
           db.medic.query.callCount.should.equal(1);
-          db.medic.query.args[0][0].should.equal('medic/reports_by_form_and_parent');
+          db.medic.query.args[0][0].should.equal(VIEWS.REPORTS_BY_FORM_AND_PARENT);
           db.medic.query.args[0][1].should.deep.equal({
             startkey: ['myForm', 'parent1'],
             endkey: ['myForm', 'parent1'],
@@ -468,7 +470,7 @@ describe('utils util', () => {
       return utils.getReportsWithinTimeWindow(latestTimestamp, timeWindowInDays).then(result => {
         result.should.deep.equal([{ _id: 'r1', reported_date: 1000 }, { _id: 'r2', reported_date: 2000 }]);
         db.medic.query.callCount.should.equal(1);
-        db.medic.query.args[0][0].should.equal('medic-client/reports_by_date');
+        db.medic.query.args[0][0].should.equal(VIEWS.REPORTS_BY_DATE);
         db.medic.query.args[0][1].should.deep.equal({
           endkey: [expectedStartTimestamp],
           startkey: [latestTimestamp],

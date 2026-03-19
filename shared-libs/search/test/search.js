@@ -394,7 +394,7 @@ describe('Search service', function() {
     it('uses queryFreetext for freetext requests in multi-request mode', () => {
       // queryFreetext will fail internally (no real dataContext) and return []
       GenerateSearchRequests.generate.returns([
-        { view: 'reports_by_freetext', params: { key: 'search' }, freetext: true }
+        { view: VIEWS.REPORTS_BY_FREETEXT, params: { key: 'search' }, freetext: true }
       ]);
 
       return service('reports', {}).then((actual) => {

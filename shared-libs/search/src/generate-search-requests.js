@@ -202,7 +202,7 @@ const makeCombinedParams = (freetextRequest, typeKey) => {
 
 const getContactsByTypeAndFreetextRequest = (typeRequests, freetextRequest) => {
   const result = {
-    view: 'contacts_by_type_freetext',
+    view: VIEWS.CONTACTS_BY_TYPE_FREETEXT,
     union: typeRequests.params.keys.length > 1,
     freetext: true
   };
@@ -249,7 +249,7 @@ const requestBuilders = {
       validityRequest(filters),
       verificationRequest(filters),
       placeRequest(filters),
-      freetextRequest(filters, 'reports_by_freetext'),
+      freetextRequest(filters, VIEWS.REPORTS_BY_FREETEXT),
       subjectRequest(filters)
     ];
 
@@ -262,7 +262,7 @@ const requestBuilders = {
   contacts: (filters, extensions) => {
     const shouldSortByLastVisitedDate = module.exports.shouldSortByLastVisitedDate(extensions);
 
-    const freetextRequests = freetextRequest(filters, 'contacts_by_freetext');
+    const freetextRequests = freetextRequest(filters, VIEWS.CONTACTS_BY_FREETEXT);
     const contactsByParentRequest = getContactsByParentRequest(filters);
     const typeRequest = contactTypeRequest(filters, shouldSortByLastVisitedDate);
     const hasTypeRequest = typeRequest?.params.keys.length;
