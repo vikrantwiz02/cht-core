@@ -2,18 +2,20 @@ const loginPage = require('@page-objects/default/login/login.wdio.page');
 const pagePerformance = require('@utils/performance');
 const commonElements = require('@page-objects/default/common/common.wdio.page');
 const reportsPage = require('@page-objects/default/reports/reports.wdio.page');
-
+const commonEnketoPage = require('@page-objects/default/enketo/common-enketo.wdio.page');
 const userFactory = require('@factories/cht/users/users');
 const commonPage = require('@page-objects/default/common/common.wdio.page');
 const user = userFactory.build();
 const utils = require('@utils');
 const tasksPage = require('@page-objects/default/tasks/tasks.wdio.page');
 const searchPage = require('@page-objects/default/search/search.wdio.page');
+const genericForm = require('@page-objects/default/enketo/generic-form.wdio.page');
 
-const LOAD_TIMEOUT = 40000;
+const LOAD_TIMEOUT = 120000;
 
 describe('reports', () => {
   before(async () => {
+    await utils.saveDocIfNotExists(commonPage.createFormDoc(`${__dirname}/forms/app/large_cha`));
     await loginPage.login({ ...user, loadPage: false, createUser: false });
     pagePerformance.track('initial replication with tasks');
     await commonElements.waitForAngularLoaded(LOAD_TIMEOUT);
@@ -211,5 +213,26 @@ describe('reports', () => {
     await searchPage.performSearch('pregnancy', LOAD_TIMEOUT);
     await reportsPage.waitForReportsLoaded(LOAD_TIMEOUT);
     pagePerformance.record();
+  });
+
+  describe('forms', () => {
+    it('measure opening big form', async () => {
+      await commonPage.goToReports();
+      await reportsPage.waitForReportsLoaded();
+
+      await commonElements.clickFastActionFlat({ actionId: 'large_cha' });
+      pagePerformance.track('reports - open big form');
+      await commonElements.waitForPageLoaded(LOAD_TIMEOUT);
+      await $('#form-title').waitForDisplayed();
+      pagePerformance.record();
+
+      await commonEnketoPage.selectCheckBox('Danger signs present', 'Not breathing normally');
+      await commonEnketoPage.selectCheckBox('Danger signs present', 'Vomits everything');
+
+      await commonEnketoPage.selectRadioButton('Was the patient referred immediately?', 'No');
+      pagePerformance.track('reports - next page big form');
+      await genericForm.nextPage();
+      pagePerformance.record();
+    });
   });
 });
