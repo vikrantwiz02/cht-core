@@ -21,9 +21,8 @@ const performanceMeasuresToMarkdownTable = (measures) => {
 
   const headers = ['Action', ...new Array(maxDurations).fill('Time(s)'), 'Avg(s)'];
 
-  const lines = [];
-  lines.push(`| ${headers.join(' | ')} |`, `| ${headers.map(() => '---').join(' | ')} |`);
-
+  // Prepare all data rows first to calculate column widths
+  const dataRows = [];
   for (const key of Object.keys(rows).sort()) {
     const row = rows[key];
     const line = [
@@ -31,7 +30,26 @@ const performanceMeasuresToMarkdownTable = (measures) => {
       ...new Array(maxDurations).fill('').map((s, i) => formatDuration(row.duration[i]) || s),
       formatDuration(row.duration.reduce((a, b) => a + b, 0) / row.duration.length),
     ];
-    lines.push(`| ${line.join(' | ')} |`);
+    dataRows.push(line);
+  }
+
+  // Calculate max width for each column
+  const columnWidths = headers.map((header, i) => {
+    const maxDataWidth = Math.max(...dataRows.map(row => String(row[i]).length));
+    return Math.max(header.length, maxDataWidth);
+  });
+
+  // Pad cell content to column width
+  const padCell = (content, width) => String(content).padEnd(width, ' ');
+
+  const lines = [];
+  lines.push(
+    `| ${headers.map((h, i) => padCell(h, columnWidths[i])).join(' | ')} |`,
+    `| ${columnWidths.map(w => '-'.repeat(w)).join(' | ')} |`
+  );
+
+  for (const row of dataRows) {
+    lines.push(`| ${row.map((cell, i) => padCell(cell, columnWidths[i])).join(' | ')} |`);
   }
 
   return lines.join('\n');
