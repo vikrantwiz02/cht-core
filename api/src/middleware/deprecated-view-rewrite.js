@@ -59,7 +59,7 @@ const VIEW_MAPPING = {
 // Matches: /{db}/_design/{ddoc}/_view/{view}
 // Captures: ddoc name and view name
 const DEPRECATED_DDOCS = Object.keys(VIEW_MAPPING).join('|');
-const VIEW_URL_PATTERN = new RegExp(`^(\\/[^/]+\\/_design\\/)(${DEPRECATED_DDOCS})(\\/_view\\/)([a-z_]+)(.*)`);
+const VIEW_URL_PATTERN = new RegExp(String.raw`^(\/[^/]+\/_design\/)(${DEPRECATED_DDOCS})(\/_view\/)([a-z_]+)(.*)`);
 
 const rewriteDeprecatedViewUrl = (req, res, next) => {
   const match = req.url.match(VIEW_URL_PATTERN);
@@ -68,7 +68,7 @@ const rewriteDeprecatedViewUrl = (req, res, next) => {
   }
 
   const [, prefix, oldDdoc, viewSegment, viewName, rest] = match;
-  const newDdoc = VIEW_MAPPING[oldDdoc] && VIEW_MAPPING[oldDdoc][viewName];
+  const newDdoc = VIEW_MAPPING[oldDdoc]?.[viewName];
 
   if (!newDdoc) {
     return next();
