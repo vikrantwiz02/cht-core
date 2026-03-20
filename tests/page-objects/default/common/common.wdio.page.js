@@ -548,6 +548,7 @@ const countInboxItems = async () => await $$('.inbox-items .content-row').length
 const noMoreElements = () => $('aria/No more');
 const loadNextInfiniteScrollPage = async (timeout) => {
   const initialInboxItemsCount = await countInboxItems();
+  await $('.inbox-items .items-container').waitForExist();
   await browser.execute(() => {
     const container = document.querySelector('.inbox-items .items-container');
     container.scrollTop = container.scrollHeight;
