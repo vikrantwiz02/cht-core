@@ -138,10 +138,16 @@ VIEWS.REPLICATION_LIMIT = 'logs/replication_limit';
 Object.freeze(VIEWS);
 
 // Returns the ddoc name for a given view path, e.g. getDdoc(VIEWS.CONTACTS_BY_DEPTH) => 'medic'
-const getDdoc = (viewPath) => _viewToDdoc[viewPath]?.ddoc;
+const getDdoc = (viewPath) => {
+  const entry = _viewToDdoc[viewPath];
+  return entry && entry.ddoc;
+};
 
 // Returns the view name for a given view path, e.g. getViewName(VIEWS.CONTACTS_BY_DEPTH) => 'contacts_by_depth'
-const getViewName = (viewPath) => _viewToDdoc[viewPath]?.view;
+const getViewName = (viewPath) => {
+  const entry = _viewToDdoc[viewPath];
+  return entry && entry.view;
+};
 
 // User Roles
 const USER_ROLES = {
