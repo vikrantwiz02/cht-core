@@ -171,20 +171,26 @@ Object.values(NOUVEAU_INDEXES).forEach(path => {
 // Converts a view path to the CouchDB URL segment
 // e.g. 'medic-client/doc_by_type' => '_design/medic-client/_view/doc_by_type'
 const viewUrl = (viewPath) => {
-  const { ddoc, view } = _viewToDdoc[viewPath];
+  const entry = _viewToDdoc[viewPath] || {};
+  const ddoc = entry.ddoc || viewPath.split('/')[0];
+  const view = entry.view || viewPath.split('/')[1];
   return `_design/${ddoc}/_view/${view}`;
 };
 
 // Converts a nouveau index path like 'medic/docs_by_replication_key'
 // to '_design/medic/_nouveau/docs_by_replication_key'
 const nouveauUrl = (indexPath) => {
-  const { ddoc, view } = _viewToDdoc[indexPath];
+  const entry = _viewToDdoc[indexPath] || {};
+  const ddoc = entry.ddoc || indexPath.split('/')[0];
+  const view = entry.view || indexPath.split('/')[1];
   return `_design/${ddoc}/_nouveau/${view}`;
 };
 
-// Converts a nouveau index path to its info URL segment: '_design/medic/_nouveau_info/docs_by_replication_key'
+// Converts a nouveau index path to its info URL segment
 const nouveauInfoUrl = (indexPath) => {
-  const { ddoc, view } = _viewToDdoc[indexPath];
+  const entry = _viewToDdoc[indexPath] || {};
+  const ddoc = entry.ddoc || indexPath.split('/')[0];
+  const view = entry.view || indexPath.split('/')[1];
   return `_design/${ddoc}/_nouveau_info/${view}`;
 };
 
