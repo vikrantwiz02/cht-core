@@ -31,7 +31,7 @@ describe('Initial replication', () => {
       localDb = {
         allDocs: sinon.stub().resolves({
           rows: [
-            ...REPLICATED_DDOCS.map((id, i) => i === 1 ? { id, error: 'missing' } : { id }),
+            ...REPLICATED_DDOCS.map((id, i) => i === 0 ? { id, error: 'missing' } : { id }),
             { id: DOC_IDS.SETTINGS },
             { id: 'org.couchdb.user:Nivea' },
           ]

@@ -60,7 +60,7 @@ const queryDocs = (
 /** @internal */
 export const queryDocsByRange = (
   db: PouchDB.Database<Doc>,
-  view: string
+  view: ViewRef
 ) => async (
   startkey: unknown,
   endkey: unknown,
@@ -81,7 +81,7 @@ export const queryDocsByRange = (
 /** @internal */
 export const queryDocsByKey = (
   db: PouchDB.Database<Doc>,
-  view: string
+  view: ViewRef
 ) => async (
   key: unknown,
   limit: number,
@@ -99,7 +99,7 @@ const queryDocIds = (
 /** @internal */
 export const queryDocIdsByRange = (
   db: PouchDB.Database<Doc>,
-  view: string
+  view: ViewRef
 ) => async (
   startkey: unknown,
   endkey: unknown,
@@ -120,7 +120,7 @@ export const queryDocIdsByRange = (
 /** @internal */
 export const queryDocIdsByKey = (
   db: PouchDB.Database<Doc>,
-  view: string
+  view: ViewRef
 ) => async (
   key: unknown,
   limit: number,

@@ -7,7 +7,7 @@ const logger = require('@medic/logger');
 const translationUtils = require('@medic/translation-utils');
 const tombstoneUtils = require('@medic/tombstone-utils');
 const viewMapUtils = require('@medic/view-map-utils');
-const { DOC_IDS } = require('@medic/constants');
+const { DDOC_IDS, DOC_IDS, NOUVEAU_INDEXES, VIEWS, getViewName } = require('@medic/constants');
 const settingsService = require('./settings');
 const translations = require('../translations');
 const generateXform = require('./generate-xform');
@@ -19,8 +19,7 @@ const dataContext = require('./data-context');
 const extensionLibs = require('./extension-libs');
 const deployInfo = require('./deploy-info');
 
-const MEDIC_DDOC_ID = '_design/medic';
-const REPLICATION_DDOC_ID = '_design/replication';
+const MEDIC_DDOC_ID = DDOC_IDS.MEDIC;
 
 const loadTranslations = () => {
   const translationCache = {};
@@ -56,17 +55,19 @@ const initTransitionLib = () => {
   config.setTransitionsLib(transitionsLib);
 };
 
-const loadViewMaps = async () => {
-  try {
-    const replicationDdoc = await db.medic.get(REPLICATION_DDOC_ID);
-    viewMapUtils.loadViewMaps(
-      replicationDdoc,
-      ['contacts_by_depth'],
-      ['docs_by_replication_key']
-    );
-  } catch (err) {
-    logger.error('Error loading view maps: %o', err);
-  }
+const loadViewMaps = () => {
+  return db.medic
+    .get(MEDIC_DDOC_ID)
+    .then(ddoc => {
+      viewMapUtils.loadViewMaps(
+        ddoc,
+        [getViewName(VIEWS.CONTACTS_BY_DEPTH)],
+        [getViewName(NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY)]
+      );
+    })
+    .catch(err => {
+      logger.error('Error loading view maps for medic ddoc: %o', err);
+    });
 };
 
 const loadSettings = () => {
@@ -160,7 +161,7 @@ const listen = () => {
       return Promise.resolve();
     }
 
-    if (change.id === MEDIC_DDOC_ID || change.id === REPLICATION_DDOC_ID) {
+    if (change.id === MEDIC_DDOC_ID) {
       return handleDdocChange();
     }
 

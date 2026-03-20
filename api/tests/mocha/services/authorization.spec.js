@@ -9,7 +9,15 @@ const request = require('@medic/couch-request');
 const environment = require('@medic/environment');
 
 const { assert } = require('chai');
-const { CONTACT_TYPES, VIEWS, NOUVEAU_INDEXES, nouveauUrl, REPLICATED_DDOCS } = require('@medic/constants');
+const {
+  CONTACT_TYPES, VIEWS, NOUVEAU_INDEXES, nouveauUrl,
+  REPLICATED_DDOCS, getDdoc, getViewName,
+} = require('@medic/constants');
+
+const DEPTH_DDOC = getDdoc(VIEWS.CONTACTS_BY_DEPTH);
+const DEPTH_VIEW = getViewName(VIEWS.CONTACTS_BY_DEPTH);
+const REP_KEY_DDOC = getDdoc(NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY);
+const REP_KEY_VIEW = getViewName(NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY);
 const userCtx = {
   name: 'user',
   contact_id: 'contact_id',
@@ -1000,10 +1008,10 @@ describe('Authorization service', () => {
       const docsBydocsByReplicationKeytub = sinon.stub().returns({ docsByReplicationKeyStubResult: true });
       const doc = { _id: 1, _rev: 1 };
       viewMapUtils.getViewMapFn
-        .withArgs('replication', 'contacts_by_depth')
+        .withArgs(DEPTH_DDOC, DEPTH_VIEW)
         .returns(contactsByDepthStub);
       viewMapUtils.getNouveauViewMapFn
-        .withArgs('replication', 'docs_by_replication_key')
+        .withArgs(REP_KEY_DDOC, REP_KEY_VIEW)
         .returns(docsBydocsByReplicationKeytub);
 
       config.get.returns('config');
@@ -1072,14 +1080,6 @@ describe('Authorization service', () => {
         )
         .should.equal(true);
 
-      // Test that replicated ddocs (shared-*, webapp-*) are allowed
-      service
-        .allowedDoc(
-          REPLICATED_DDOCS[1],
-          { userCtx: userCtxMultiFacility },
-          { docsByReplicationKey: [{ key: '_all', value: null}], contactsByDepth: null}
-        )
-        .should.equal(true);
       service
         .allowedDoc(
           'org.couchdb.user:' + userCtx.name,
@@ -2690,8 +2690,8 @@ describe('Authorization service', () => {
       sinon.stub(db.medic, 'allDocs').resolves({ rows: [] });
       const contactsByDepth = sinon.stub();
       const docsByReplicationKey = sinon.stub();
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
       const docs = [ { _id: 'doc1' }, { _id: 'doc2' }, { _id: 'doc3' } ];
       return service
         .getScopedAuthorizationContext(userCtx, [{ doc: docs[0] }, { doc: docs[1], viewResults: {} }, { doc: docs[2] }])
@@ -2826,8 +2826,8 @@ describe('Authorization service', () => {
       docsByReplicationKey.withArgs(c4).returns({ key: 'c4', type: 'contact' });
       docsByReplicationKey.withArgs(c5).returns({ key: 'c5', type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       return service
         .getScopedAuthorizationContext(userCtx, docObjs)
@@ -2999,8 +2999,8 @@ describe('Authorization service', () => {
         .withArgs(sinon.match({ _id: 'patient3doc' }))
         .returns({ key: 'patient3doc', type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       db.medic.query.withArgs( VIEWS.CONTACTS_BY_REFERENCE).resolves({
         rows: [
@@ -3150,8 +3150,8 @@ describe('Authorization service', () => {
       docsByReplicationKey.withArgs(sinon.match({ _id: 'p2' })).returns([{ fields: { key: 'p2', type: 'contact' }}]);
       docsByReplicationKey.withArgs(sinon.match({ _id: 'p3' })).returns([{ fields: { key: 'p3', type: 'contact' }}]);
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       db.medic.query.withArgs( VIEWS.CONTACTS_BY_REFERENCE).resolves({
         rows: [
@@ -3291,8 +3291,8 @@ describe('Authorization service', () => {
         .withArgs(sinon.match({ _id: 'patient2doc' }))
         .returns({ key: ['patient2doc'], type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       db.medic.query.withArgs( VIEWS.CONTACTS_BY_REFERENCE).resolves({
         rows: [
@@ -3427,8 +3427,8 @@ describe('Authorization service', () => {
         .withArgs(sinon.match({ _id: 'patient1doc' }))
         .returns({ key: 'patient1doc', type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       db.medic.query.withArgs( VIEWS.CONTACTS_BY_REFERENCE).resolves({
         rows: [
@@ -3543,8 +3543,8 @@ describe('Authorization service', () => {
         .withArgs(sinon.match({ _id: 'facility_id' }))
         .returns({ key: 'facility_id', type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       db.medic.query.withArgs( VIEWS.CONTACTS_BY_REFERENCE).resolves({
         rows: [
@@ -3650,8 +3650,8 @@ describe('Authorization service', () => {
       docsByReplicationKey.withArgs(c1).returns({ key: 'c1', type: 'contact' });
       docsByReplicationKey.withArgs(c2).returns({ key: 'c2', type: 'contact' });
 
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       return service
         .getScopedAuthorizationContext(userCtx, docObjs)
@@ -3723,12 +3723,12 @@ describe('Authorization service', () => {
         { key: ['place_id', 0], value: { _id: 'place_id', primary_contact: contact1._id } },
         { key: ['facility_id', 1], value: { _id: 'place_id', primary_contact: contact1._id } },
       ]);
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
 
       const docsByReplicationKey = sinon.stub();
       docsByReplicationKey.withArgs(contact1).returns(docObjs[0].viewResults.docsByReplicationKey);
       docsByReplicationKey.withArgs(contact2).returns({ key: 'place_id', type: 'contact_id' });
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       config.get.returns([
         { role: 'user', depth: 1, report_depth: 0, replicate_primary_contacts: true },
@@ -3807,12 +3807,12 @@ describe('Authorization service', () => {
         { key: ['facility_id', 1], value: { _id: 'place_id', primary_contact: contact1._id } },
         { key: ['place_id', 0], value: { _id: 'place_id', primary_contact: contact1._id } },
       ]);
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
 
       const docsByReplicationKey = sinon.stub();
       docsByReplicationKey.withArgs(contact1).returns(docObjs[0].viewResults.docsByReplicationKey);
       docsByReplicationKey.withArgs(contact2).returns({ key: 'place_id', type: 'contact' });
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       config.get.returns([
         { role: 'user', depth: 1, report_depth: 0, replicate_primary_contacts: true },
@@ -3892,12 +3892,12 @@ describe('Authorization service', () => {
         { key: ['facility', 1], value: { _id: 'place', primary_contact: contact1._id } },
         { key: ['place', 0], value: { _id: 'place', primary_contact: contact1._id } },
       ]);
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
 
       const docsByReplicationKey = sinon.stub();
       docsByReplicationKey.withArgs(contact1).returns(docObjs[0].viewResults.docsByReplicationKey);
       docsByReplicationKey.withArgs(contact2).returns({ key: 'place', type: 'contact' });
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       config.get.returns([
         { role: 'user', depth: 1, report_depth: 0, replicate_primary_contacts: true },
@@ -3972,12 +3972,12 @@ describe('Authorization service', () => {
       const contactsByDepth = sinon.stub();
       contactsByDepth.withArgs(contact1).returns(docObjs[0].viewResults.contactsByDepth);
       contactsByDepth.withArgs(weirdDoc).returns();
-      viewMapUtils.getViewMapFn.withArgs('replication', 'contacts_by_depth').returns(contactsByDepth);
+      viewMapUtils.getViewMapFn.withArgs(DEPTH_DDOC, DEPTH_VIEW).returns(contactsByDepth);
 
       const docsByReplicationKey = sinon.stub();
       docsByReplicationKey.withArgs(contact1).returns(docObjs[0].viewResults.docsByReplicationKey);
       docsByReplicationKey.withArgs(weirdDoc).returns({ key: ['place'], type: 'contact' });
-      viewMapUtils.getNouveauViewMapFn.withArgs('replication', 'docs_by_replication_key').returns(docsByReplicationKey);
+      viewMapUtils.getNouveauViewMapFn.withArgs(REP_KEY_DDOC, REP_KEY_VIEW).returns(docsByReplicationKey);
 
       config.get.returns([
         { role: 'user', depth: 1, report_depth: 0, replicate_primary_contacts: true },

@@ -2,6 +2,7 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import sinon from 'sinon';
 import { assert, expect } from 'chai';
 import * as _ from 'lodash-es';
+import { VIEWS } from '@medic/constants';
 
 import { XmlFormsService } from '@mm-services/xml-forms.service';
 import { AuthService } from '@mm-services/auth.service';
@@ -1339,7 +1340,7 @@ describe('XmlForms service', () => {
         expect(warn.args[0][0]).to.equal('Error in XMLFormService : getById : ');
         expect(actual).to.deep.equal(expected);
         expect(dbQuery.callCount).to.equal(1);
-        expect(dbQuery.args[0][0]).to.equal(`shared/doc_by_type`);
+        expect(dbQuery.args[0][0]).to.equal(VIEWS.DOC_BY_TYPE);
         const options = dbQuery.args[0][1];
         expect(options.include_docs).to.equal(true);
         expect(options.key).to.deep.equal(['form']);

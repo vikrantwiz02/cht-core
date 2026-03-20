@@ -5,7 +5,7 @@ const db = require('../db');
 const environment = require('@medic/environment');
 const logger = require('@medic/logger');
 const deployInfoService = require('./deploy-info');
-const { NOUVEAU_INDEXES, SENTINEL_METADATA, VIEWS } = require('@medic/constants');
+const { DDOC_IDS, NOUVEAU_INDEXES, SENTINEL_METADATA, VIEWS, getDdoc, getViewName } = require('@medic/constants');
 
 const DBS_TO_MONITOR = {
   'medic': environment.db,
@@ -15,16 +15,7 @@ const DBS_TO_MONITOR = {
 };
 
 const VIEW_INDEXES_TO_MONITOR = {
-  // Note: medic and medic-client ddocs are no longer included as all views have been moved to other ddocs
-  medic: [
-    'messages',
-    'replication',
-    'server',
-    'shared',
-    'shared-reports',
-    'webapp-contacts',
-    'webapp-reports',
-  ],
+  medic: Object.values(DDOC_IDS).map(id => id.replace('_design/', '')),
   sentinel: ['sentinel'],
   usersmeta: ['users-meta'],
   users: ['users'],
@@ -199,8 +190,7 @@ const fetchNouveauIndexInfo = (db, designDoc, indexName) => request
 
 const fetchNouveauIndexInfosForDb = (db) => Promise.all(
   NOUVEAU_INDEXES_TO_MONITOR[db].map(index => {
-    const [ddoc, indexName] = index.split('/');
-    return fetchNouveauIndexInfo(DBS_TO_MONITOR[db], ddoc, indexName);
+    return fetchNouveauIndexInfo(DBS_TO_MONITOR[db], getDdoc(index), getViewName(index));
   }),
 ).then((nouveauIndexInfos) => nouveauIndexInfos.filter(info => info));
 

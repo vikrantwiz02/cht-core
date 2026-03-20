@@ -1,7 +1,5 @@
 const logger = require('@medic/logger');
-const { VIEWS } = require('@medic/constants');
-
-const getDdoc = (viewPath) => viewPath.split('/')[0];
+const { VIEWS, getDdoc } = require('@medic/constants');
 
 // Maps view names from their old design documents (medic / medic-client)
 // to the new design documents introduced by the view reorganization (#2849).
@@ -30,7 +28,6 @@ const VIEW_MAPPING = {
     gateway_messages_by_state: getDdoc(VIEWS.GATEWAY_MESSAGES_BY_STATE),
     messages_by_gateway_ref: getDdoc(VIEWS.MESSAGES_BY_GATEWAY_REF),
     messages_by_last_updated_state: getDdoc(VIEWS.MESSAGES_BY_LAST_UPDATED_STATE),
-    messages_by_state: getDdoc(VIEWS.MESSAGES_BY_STATE),
     messages_by_uuid: getDdoc(VIEWS.MESSAGES_BY_UUID),
   },
   'medic-client': {

@@ -4,6 +4,7 @@ const rewire = require('rewire');
 const fs = require('fs');
 const request = require('@medic/couch-request');
 const logger = require('@medic/logger');
+const { DDOC_IDS } = require('@medic/constants');
 
 const db = require('../../../../src/db');
 const upgradeLogService = require('../../../../src/services/setup/upgrade-log');
@@ -248,7 +249,7 @@ describe('Setup utils', () => {
         sinon.stub(resources, 'ddocsPath').value('localDdocs');
 
         const medicDdocs = [
-          { _id: '_design/medic', views: { medic1: {}, medic2: {} } },
+          { _id: DDOC_IDS.MEDIC, views: { medic1: {}, medic2: {} } },
           { _id: '_design/medic-client', views: { client1: {}, client2: {} } },
         ];
         const sentinelDdocs = [{ _id: '_design/sentinel', views: { sentinel: {} } }];
@@ -543,7 +544,7 @@ describe('Setup utils', () => {
 
       const ddocDefinitions = new Map();
       ddocDefinitions.set(DATABASES[0], [
-        { _id: '_design/medic', views: { medic1: {}, medic2: {} } },
+        { _id: DDOC_IDS.MEDIC, views: { medic1: {}, medic2: {} } },
         { _id: '_design/medic-client', views: { client1: {}, client2: {} } },
       ]);
       ddocDefinitions.set(DATABASES[1], [{ _id: '_design/sentinel', views: { sentinel: {} } }]);
@@ -585,7 +586,7 @@ describe('Setup utils', () => {
 
       const ddocDefinitions = new Map();
       ddocDefinitions.set(DATABASES[0], [
-        { _id: '_design/medic', _rev: 1, views: { medic: {} } },
+        { _id: DDOC_IDS.MEDIC, _rev: 1, views: { medic: {} } },
         { _id: '_design/medic-client', _rev: 2, views: { clienta: {}, clientb: {} } },
       ]);
       ddocDefinitions.set(DATABASES[1], [{ _id: '_design/sentinel', views: { sentinel: {} } }]);
@@ -627,7 +628,7 @@ describe('Setup utils', () => {
 
       const ddocDefinitions = new Map();
       ddocDefinitions.set(DATABASES[0], [
-        { _id: '_design/medic', views: { medic: {} } },
+        { _id: DDOC_IDS.MEDIC, views: { medic: {} } },
         { _id: '_design/medic-client', views: { clienta: {}, clientb: {} } },
       ]);
       ddocDefinitions.set(DATABASES[2], [{ _id: '_design/logs', views: { logs: {} } }]);
@@ -664,7 +665,7 @@ describe('Setup utils', () => {
 
       const ddocDefinitions = new Map();
       ddocDefinitions.set(DATABASES[0], [
-        { _id: '_design/medic', views: { medic: {} } },
+        { _id: DDOC_IDS.MEDIC, views: { medic: {} } },
         { _id: '_design/medic-client', views: { client: {} } },
       ]);
       ddocDefinitions.set(DATABASES[1], [{ _id: '_design/sentinel', views: { sentinel: {} } }]);
@@ -689,7 +690,7 @@ describe('Setup utils', () => {
       sinon.stub(resources, 'ddocsPath').value('localDdocs');
 
       const medicDdocs = [
-        { _id: '_design/medic', views: { medic: {} } },
+        { _id: DDOC_IDS.MEDIC, views: { medic: {} } },
         { _id: '_design/medic-client', views: { client: {} } },
       ];
       const sentinelDdocs = [{ _id: '_design/sentinel', views: { sentinel: {} } }];
@@ -711,7 +712,7 @@ describe('Setup utils', () => {
       await utils.saveStagedDdocs(ddocDefinitions);
       const ddocDefinitionsAfter = await utils.getDdocDefinitions();
 
-      expect(ddocDefinitionsAfter.get(DATABASES[0])[0]._id).to.equal('_design/medic');
+      expect(ddocDefinitionsAfter.get(DATABASES[0])[0]._id).to.equal(DDOC_IDS.MEDIC);
       expect(ddocDefinitionsAfter.get(DATABASES[0])[1]._id).to.equal('_design/medic-client');
       expect(ddocDefinitionsAfter.get(DATABASES[1])[0]._id).to.equal('_design/sentinel');
       expect(ddocDefinitionsAfter.get(DATABASES[2])[0]._id).to.equal('_design/logs');
@@ -725,7 +726,7 @@ describe('Setup utils', () => {
   describe('getPackagedBuildInfo', () => {
     it('should get the version from the packaged medic ddoc', async () => {
       const medicDdoc = {
-        _id: '_design/medic',
+        _id: DDOC_IDS.MEDIC,
         build_info: {
           application: 'medic',
           namespace: 'medic',
@@ -795,7 +796,7 @@ describe('Setup utils', () => {
 
       expect(await utils.freshInstall()).to.equal(true);
       expect(db.medic.get.callCount).to.equal(1);
-      expect(db.medic.get.args[0]).to.deep.equal(['_design/medic']);
+      expect(db.medic.get.args[0]).to.deep.equal([DDOC_IDS.MEDIC]);
     });
 
     it('should return false if there is a medic ddoc', async () => {
@@ -828,7 +829,7 @@ describe('Setup utils', () => {
         rows: [
           { doc: { _id: '_design/:staged:medic', _rev: '1', new: true, deploy_info: deployInfoNew } },
           { doc: { _id: '_design/:staged:medic-client', _rev: '1', new: true, deploy_info: deployInfoNew } },
-          { doc: { _id: '_design/medic', _rev: '2', old: true, deploy_info: deployInfoOld } },
+          { doc: { _id: DDOC_IDS.MEDIC, _rev: '2', old: true, deploy_info: deployInfoOld } },
           { doc: { _id: '_design/medic-client', _rev: '3', old: true, deploy_info: deployInfoOld } },
         ]
       }); // all ddocs have match
@@ -868,7 +869,7 @@ describe('Setup utils', () => {
 
       expect(db.saveDocs.callCount).to.equal(5);
       expect(db.saveDocs.args[0]).to.deep.equal([db.medic, [
-        { _id: '_design/medic', _rev: '2', new: true, deploy_info: deployInfoExpected },
+        { _id: DDOC_IDS.MEDIC, _rev: '2', new: true, deploy_info: deployInfoExpected },
         { _id: '_design/medic-client', _rev: '3', new: true, deploy_info: deployInfoExpected },
       ]]);
       expect(db.saveDocs.args[1]).to.deep.equal([db.sentinel, [
@@ -887,7 +888,7 @@ describe('Setup utils', () => {
       sinon.stub(db.medic, 'allDocs').resolves({
         rows: [
           { doc: { _id: '_design/:staged:medic', _rev: '1', foo: 1, deploy_info: { deploy: 'info' } } },
-          { doc: { _id: '_design/medic', _rev: '2', bar: 2, deploy_info: { deploy: 'old' } } },
+          { doc: { _id: DDOC_IDS.MEDIC, _rev: '2', bar: 2, deploy_info: { deploy: 'old' } } },
         ]
       }); // all ddocs have match
       sinon.stub(db.sentinel, 'allDocs').rejects({ the: 'error' });
@@ -905,7 +906,7 @@ describe('Setup utils', () => {
         expect(db.medic.allDocs.callCount).to.equal(1);
         expect(db.saveDocs.callCount).to.equal(1);
         expect(db.saveDocs.args[0]).to.deep.equal([db.medic, [
-          { _id: '_design/medic', _rev: '2', foo: 1, deploy_info: { deploy: 'info', timestamp: 2500 } },
+          { _id: DDOC_IDS.MEDIC, _rev: '2', foo: 1, deploy_info: { deploy: 'info', timestamp: 2500 } },
         ]]);
         expect(db.sentinel.allDocs.callCount).to.equal(1);
       }
@@ -915,7 +916,7 @@ describe('Setup utils', () => {
       sinon.stub(db.medic, 'allDocs').resolves({
         rows: [
           { doc: { _id: '_design/:staged:medic', _rev: '1', foo: 1, deploy_info: { deploy: 'info' } } },
-          { doc: { _id: '_design/medic', _rev: '2', bar: 2, deploy_info: 'omg' } },
+          { doc: { _id: DDOC_IDS.MEDIC, _rev: '2', bar: 2, deploy_info: 'omg' } },
         ]
       }); // all ddocs have match
       sinon.stub(db.sentinel, 'allDocs').resolves({
@@ -1016,7 +1017,7 @@ describe('Setup utils', () => {
       const stagingDoc = {
         version: '4.0.0',
         _attachments: {
-          '_design/medic': { data: 'a' },
+          [DDOC_IDS.MEDIC]: { data: 'a' },
           '_design/thing': { data: 'b' },
           'docker-compose/file1.yml': { data: file1 },
           'docker-compose/file2.yml': { data: file2 },
@@ -1224,7 +1225,7 @@ describe('Setup utils', () => {
   describe('getDdocInfo', () => {
     it('should return view_index info on success', async () => {
       const database = { name: 'medic' };
-      const ddoc = '_design/medic';
+      const ddoc = DDOC_IDS.MEDIC;
       const response = { view_index: { sizes: { active: 123 } } };
       sinon.stub(request, 'get').resolves(response);
 
@@ -1237,7 +1238,7 @@ describe('Setup utils', () => {
 
     it('should return null and log error on failure', async () => {
       const database = { name: 'medic' };
-      const ddoc = '_design/medic';
+      const ddoc = DDOC_IDS.MEDIC;
       sinon.stub(request, 'get').rejects(new Error('boom'));
       sinon.stub(logger, 'error');
 
@@ -1252,7 +1253,7 @@ describe('Setup utils', () => {
   describe('getNouveauInfo', () => {
     it('should return empty array if ddoc has no nouveau property', async () => {
       const database = { name: 'medic' };
-      const ddoc = { _id: '_design/medic' };
+      const ddoc = { _id: DDOC_IDS.MEDIC };
       const result = await utils.getNouveauInfo(database, ddoc);
       expect(result).to.deep.equal([]);
     });
@@ -1260,7 +1261,7 @@ describe('Setup utils', () => {
     it('should return nouveau info for all indexes', async () => {
       const database = { name: 'medic' };
       const ddoc = {
-        _id: '_design/server',
+        _id: DDOC_IDS.MEDIC,
         nouveau: {
           idx1: {},
           idx2: {}
@@ -1275,15 +1276,15 @@ describe('Setup utils', () => {
       const result = await utils.getNouveauInfo(database, ddoc);
 
       expect(getStub.callCount).to.equal(2);
-      expect(getStub.args[0][0].url).to.contain('/medic/_design/server/_nouveau_info/idx1');
-      expect(getStub.args[1][0].url).to.contain('/medic/_design/server/_nouveau_info/idx2');
+      expect(getStub.args[0][0].url).to.contain(`/medic/${DDOC_IDS.MEDIC}/_nouveau_info/idx1`);
+      expect(getStub.args[1][0].url).to.contain(`/medic/${DDOC_IDS.MEDIC}/_nouveau_info/idx2`);
       expect(result).to.deep.equal([response1.search_index, response2.search_index]);
     });
 
     it('should return empty array and log error on failure', async () => {
       const database = { name: 'medic' };
       const ddoc = {
-        _id: '_design/medic',
+        _id: DDOC_IDS.MEDIC,
         nouveau: { idx1: {} }
       };
       sinon.stub(request, 'get').rejects(new Error('boom'));

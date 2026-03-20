@@ -9,7 +9,7 @@ const placeFactory = require('@factories/cht/contacts/place');
 const personFactory = require('@factories/cht/contacts/person');
 const genericReportFactory = require('@factories/cht/reports/generic-report');
 const uuid = require('uuid').v4;
-const { DOC_IDS, CONTACT_TYPES } = require('@medic/constants');
+const { DOC_IDS, CONTACT_TYPES, REPLICATED_DDOCS } = require('@medic/constants');
 
 /* global window */
 
@@ -183,13 +183,13 @@ describe('db-sync', () => {
   it('should filter ddocs', async () => {
     const newDdoc = { _id: '_design/test' };
     await chtDbUtils.createDoc(newDdoc);
-    const serverRevs = await getServerRevs(['_design/shared']);
-    await chtDbUtils.updateDoc('_design/shared', { something: 'random' });
+    const serverRevs = await getServerRevs([REPLICATED_DDOCS[0]]);
+    await chtDbUtils.updateDoc(REPLICATED_DDOCS[0], { something: 'random' });
     // updating the ddoc will throw the "upgrade" popup, ignore it!
     await commonElements.closeReloadModal();
     await commonElements.sync();
 
-    const updatedServerRevs = await getServerRevs(['_design/shared']);
+    const updatedServerRevs = await getServerRevs([REPLICATED_DDOCS[0]]);
     expect(serverRevs).to.deep.equal(updatedServerRevs);
     const result = await utils.getDocs(['_design/test'], true);
     expect(result.rows[0]).to.deep.equal({

@@ -1,6 +1,7 @@
 const expect = require('chai').expect;
+const { VIEWS, getDdoc, getViewName } = require('@medic/constants');
 const utils = require('./utils');
-const map = utils.loadView('medic-db', 'shared', 'docs_by_id_lineage');
+const map = utils.loadView('medic-db', getDdoc(VIEWS.DOCS_BY_ID_LINEAGE), getViewName(VIEWS.DOCS_BY_ID_LINEAGE));
 
 describe('docs_by_id_lineage view', () => {
   beforeEach(() => {

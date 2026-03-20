@@ -12,7 +12,7 @@ const reportsPage = require('@page-objects/default/reports/reports.wdio.page');
 const pregnancyFactory = require('@factories/cht/reports/pregnancy');
 const genericForm = require('@page-objects/default/enketo/generic-form.wdio.page');
 const fs = require('fs');
-const { CONTACT_TYPES } = require('@medic/constants');
+const { CONTACT_TYPES, REPLICATED_DDOCS } = require('@medic/constants');
 const {
   destroyDbInBrowser,
   getTelemetryFromBrowser,
@@ -108,7 +108,7 @@ describe('Telemetry', () => {
     await commonPage.goToReports();
     await commonPage.sync();
 
-    const sharedDdoc = await utils.getDoc('_design/shared');
+    const replicatedDdoc = await utils.getDoc(REPLICATED_DDOCS[0]);
 
 
     const telemetryEntry = (await getTelemetryFromUserMetaDb(user.username, user.password))[0];
@@ -117,11 +117,11 @@ describe('Telemetry', () => {
       'metadata.month': yesterday.month() + 1,
       'metadata.day': yesterday.date(),
       'metadata.user': user.username,
-      'metadata.versions.app': sharedDdoc.build_info.version,
+      'metadata.versions.app': replicatedDdoc.build_info.version,
     });
 
-    const version = TAG || utils.escapeBranchName(BRANCH) || sharedDdoc.build_info.base_version;
-    expect(sharedDdoc.build_info.version).to.include(version);
+    const version = TAG || utils.escapeBranchName(BRANCH) || replicatedDdoc.build_info.base_version;
+    expect(replicatedDdoc.build_info.version).to.include(version);
   });
 
   describe('search matches telemetry', () => {

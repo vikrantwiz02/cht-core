@@ -9,10 +9,9 @@ const deployInfo = require('../../../src/services/deploy-info');
 const service = require('../../../src/services/monitoring');
 const { getBundledDdocs } = require('../../../src/services/setup/utils');
 const { DATABASES } = require('../../../src/services/setup/databases');
-const { NOUVEAU_INDEXES, SENTINEL_METADATA, VIEWS } = require('@medic/constants');
+const { DDOC_IDS, NOUVEAU_INDEXES, SENTINEL_METADATA, VIEWS } = require('@medic/constants');
 
-// Extract the ddoc name from a view/index path like 'shared/doc_by_type' → 'shared'
-const getDdoc = (viewPath) => viewPath.split('/')[0];
+const ddocName = (ddocId) => ddocId.replace('_design/', '');
 
 let clock;
 
@@ -67,123 +66,38 @@ const dbInfos = [
   }
 ];
 
+const MEDIC_DB_DDOCS = Object.values(DDOC_IDS).map(id => ddocName(id));
+
 const VIEW_INDEXES_BY_DB = {
-  [`${environment.db}`]: [
-    // Note: medic and medic-client are no longer included as all views have been moved to other ddocs
-    getDdoc(VIEWS.MESSAGES_BY_STATE),
-    getDdoc(VIEWS.DOCS_BY_REPLICATION_KEY),
-    getDdoc(VIEWS.DOC_SUMMARIES_BY_ID),
-    getDdoc(VIEWS.DOC_BY_TYPE),
-    getDdoc(VIEWS.REPORTS_BY_DATE),
-    getDdoc(VIEWS.CONTACTS_BY_LAST_VISITED),
-    getDdoc(VIEWS.DATA_RECORDS_BY_TYPE),
-  ],
-  [`${environment.db}-sentinel`]: [getDdoc(VIEWS.OUTBOUND_PUSH_TASKS)],
-  [`${environment.db}-users-meta`]: [getDdoc(VIEWS.DEVICE_BY_USER)],
-  '_users': [getDdoc(VIEWS.USERS_BY_FIELD)],
+  [`${environment.db}`]: MEDIC_DB_DDOCS,
+  [`${environment.db}-sentinel`]: [ddocName('_design/sentinel')],
+  [`${environment.db}-users-meta`]: [ddocName('_design/users-meta')],
+  '_users': [ddocName('_design/users')],
 };
 
+const makeViewIndexInfo = (name, active = 100, file = 200) => ({
+  name,
+  view_index: { sizes: { active, file } }
+});
+
 const VIEW_INDEX_INFO_BY_DESIGN = {
-  // Note: medic and medic-client removed as all views have been moved to other ddocs
-  [getDdoc(VIEWS.MESSAGES_BY_STATE)]: {
-    name: getDdoc(VIEWS.MESSAGES_BY_STATE),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 700
-      }
-    }
-  },
-  [getDdoc(VIEWS.DATA_RECORDS_BY_TYPE)]: {
-    name: getDdoc(VIEWS.DATA_RECORDS_BY_TYPE),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.CONTACTS_BY_LAST_VISITED)]: {
-    name: getDdoc(VIEWS.CONTACTS_BY_LAST_VISITED),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.REPORTS_BY_DATE)]: {
-    name: getDdoc(VIEWS.REPORTS_BY_DATE),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.DOC_BY_TYPE)]: {
-    name: getDdoc(VIEWS.DOC_BY_TYPE),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.DOC_SUMMARIES_BY_ID)]: {
-    name: getDdoc(VIEWS.DOC_SUMMARIES_BY_ID),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.DOCS_BY_REPLICATION_KEY)]: {
-    name: getDdoc(VIEWS.DOCS_BY_REPLICATION_KEY),
-    view_index: {
-      sizes: {
-        active: 100,
-        file: 200
-      }
-    }
-  },
-  [getDdoc(VIEWS.OUTBOUND_PUSH_TASKS)]: {
-    name: getDdoc(VIEWS.OUTBOUND_PUSH_TASKS),
-    view_index: {
-      sizes: {
-        active: 700,
-        file: 700
-      }
-    }
-  },
-  [getDdoc(VIEWS.DEVICE_BY_USER)]: {
-    name: getDdoc(VIEWS.DEVICE_BY_USER),
-    view_index: {
-      sizes: {
-        active: 600,
-        file: 700
-      }
-    }
-  },
-  [getDdoc(VIEWS.USERS_BY_FIELD)]: {
-    name: getDdoc(VIEWS.USERS_BY_FIELD),
-    view_index: {
-      sizes: {
-        active: 600,
-        file: 700
-      }
-    }
-  }
+  [ddocName(DDOC_IDS.MEDIC)]: makeViewIndexInfo(ddocName(DDOC_IDS.MEDIC), 100, 700),
+  [ddocName(DDOC_IDS.MEDIC_ADMIN)]: makeViewIndexInfo(ddocName(DDOC_IDS.MEDIC_ADMIN)),
+  [ddocName(DDOC_IDS.MEDIC_CLIENT)]: makeViewIndexInfo(ddocName(DDOC_IDS.MEDIC_CLIENT)),
+  [ddocName(DDOC_IDS.MEDIC_CONFLICTS)]: makeViewIndexInfo(ddocName(DDOC_IDS.MEDIC_CONFLICTS)),
+  [ddocName(DDOC_IDS.MEDIC_SMS)]: makeViewIndexInfo(ddocName(DDOC_IDS.MEDIC_SMS)),
+  'sentinel': makeViewIndexInfo('sentinel', 700, 700),
+  'users-meta': makeViewIndexInfo('users-meta', 600, 700),
+  'users': makeViewIndexInfo('users', 600, 700),
 };
 
 const NOUVEAU_DDOCS_BY_DB = {
-  [environment.db]: [getDdoc(NOUVEAU_INDEXES.CONTACTS_BY_FREETEXT), getDdoc(NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY)],
+  [environment.db]: [ddocName(DDOC_IDS.MEDIC)],
 };
 
 const NOUVEAU_INDEX_INFO_BY_DDOC = {
-  [getDdoc(NOUVEAU_INDEXES.CONTACTS_BY_FREETEXT)]: {
-    [NOUVEAU_INDEXES.REPORTS_BY_FREETEXT.split('/')[1]]: {
+  [ddocName(DDOC_IDS.MEDIC)]: {
+    reports_by_freetext: {
       name: `_design/${NOUVEAU_INDEXES.REPORTS_BY_FREETEXT}`,
       search_index: {
         update_seq: 1956891,
@@ -193,7 +107,7 @@ const NOUVEAU_INDEX_INFO_BY_DDOC = {
         signature: 'cfd67cbb4800308021b6547bcf21cbf99b9476186b5251f317b221225714c5d3',
       },
     },
-    [NOUVEAU_INDEXES.CONTACTS_BY_FREETEXT.split('/')[1]]: {
+    contacts_by_freetext: {
       name: `_design/${NOUVEAU_INDEXES.CONTACTS_BY_FREETEXT}`,
       search_index: {
         update_seq: 1956891,
@@ -203,9 +117,7 @@ const NOUVEAU_INDEX_INFO_BY_DDOC = {
         signature: '46de1dfc576838494f798264571dc59658db7ea164915dd459a7752c31591ae6',
       },
     },
-  },
-  [getDdoc(NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY)]: {
-    [NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY.split('/')[1]]: {
+    docs_by_replication_key: {
       name: `_design/${NOUVEAU_INDEXES.DOCS_BY_REPLICATION_KEY}`,
       search_index: {
         update_seq: 1263237,
@@ -214,7 +126,7 @@ const NOUVEAU_INDEX_INFO_BY_DDOC = {
         disk_size: 218427370,
         signature: '779b1288c85ec5019d5d6a86124b99c12aa729b5edc2d145ff0d09d10cd0f3fb'
       }
-    }
+    },
   },
 };
 

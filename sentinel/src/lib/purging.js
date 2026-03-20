@@ -625,7 +625,7 @@ const writePurgeLog = (roles, start, error) => {
 // - reads all user documents from the `_users` database to comprise a list of unique sets of roles
 // - creates a database for each role set with the name `<main db name>-purged-role-<hash>` where `hash` is an md5 of
 // the JSON.Stringify-ed list of roles
-// - iterates over all contacts by querying `shared/contacts_by_type` in batches
+// - iterates over all contacts by querying `medic-client/contacts_by_type` in batches
 // - for every batch of contacts, queries `docs_by_replication_key` with the resulting `subject_ids`
 // - groups results by contact to generate a list of pairs containing :
 //    a) a contact document
