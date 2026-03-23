@@ -34,7 +34,7 @@ module.exports.buildViewMapFn = (mapString) => {
 };
 
 module.exports.loadView = (dbName, ddocName, viewName) => {
-  const mapPath = path.join(__dirname, '../../../../../ddocs', dbName, ddocName, 'views', viewName, '/map.js');
+  const mapPath = path.join(__dirname, '../../../../../ddocs', dbName, 'views', viewName, '/map.js');
   const mapString = fs.readFileSync(mapPath, 'utf8');
   return module.exports.buildViewMapFn(mapString);
 };

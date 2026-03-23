@@ -16,23 +16,21 @@ const fs = require('fs');
 const path = require('path');
 const uuid = require('uuid').v4;
 
+const { VIEWS_BY_DDOC } = require('@medic/constants');
+
 const PouchDB = require('pouchdb-core');
 PouchDB.plugin(require('pouchdb-adapter-memory'));
 PouchDB.plugin(require('pouchdb-mapreduce'));
 
 let ddocs;
 
-const filesIn = (dir) => {
-  return fs.readdirSync(dir).filter(it => !it.startsWith('.'));
+const readFile = (filePath) => {
+  return fs.readFileSync(filePath, { encoding: 'utf-8' });
 };
 
-const readFile = (path) => {
-  return fs.readFileSync(path, { encoding: 'utf-8' });
-};
-
-const readOptionalFile = (path) => {
-  if (fs.existsSync(path)) {
-    return readFile(path);
+const readOptionalFile = (filePath) => {
+  if (fs.existsSync(filePath)) {
+    return readFile(filePath);
   }
 };
 
@@ -44,19 +42,22 @@ const loadView = (viewsDir, viewName) => {
   };
 };
 
-const loadDdoc = (rootDir, dbName, ddocName) => {
-  const viewsDir = path.join(rootDir, 'ddocs', dbName, ddocName, 'views');
-  const views = {};
-  if (fs.existsSync(viewsDir)) {
-    filesIn(viewsDir).forEach(view => views[view] = loadView(viewsDir, view));
-  }
-  ddocs.push({ _id: `_design/${ddocName}`, views });
-};
-
 module.exports = (rootDir='./') => {
   if (!ddocs) {
     ddocs = [];
-    filesIn(`${rootDir}/ddocs/medic-db`).forEach(ddoc => loadDdoc(rootDir, 'medic-db', ddoc));
+    const viewsDir = path.join(rootDir, 'ddocs', 'medic-db', 'views');
+    const medicDdocs = VIEWS_BY_DDOC.medic;
+
+    for (const [ddocName, viewNames] of Object.entries(medicDdocs)) {
+      const views = {};
+      for (const viewName of viewNames) {
+        const viewDir = path.join(viewsDir, viewName);
+        if (fs.existsSync(viewDir)) {
+          views[viewName] = loadView(viewsDir, viewName);
+        }
+      }
+      ddocs.push({ _id: `_design/${ddocName}`, views });
+    }
   }
   const db = new PouchDB(uuid(), { adapter: 'memory' });
   return Promise.all(ddocs.map(ddoc => db.put(ddoc)))
