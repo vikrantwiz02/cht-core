@@ -45,95 +45,103 @@ const REPLICATED_DDOCS = [
   DDOC_IDS.MEDIC_CLIENT,
 ];
 
-// Mapping from ddoc name to its views. This is the authoritative source of which
-// views live in which design document.
+// Mapping of database -> ddoc -> views. This is the authoritative source of which
+// views live in which design document in which database.
 const VIEWS_BY_DDOC = {
-  'medic-offline-freetext': [
-    'contacts_by_freetext',
-    'contacts_by_type_freetext',
-    'reports_by_freetext',
-  ],
-  'medic': [
-    'contacts_by_depth',
-    'contacts_by_primary_contact',
-    'doc_summaries_by_id',
-    'docs_by_shortcode',
-    'messages_by_state',
-    'reports_by_form_and_parent',
-    'reports_by_form_year_month_parent_reported_date',
-    'reports_by_form_year_week_parent_reported_date',
-    'tasks_in_terminal_state',
-  ],
-  'medic-admin': [
-    'contacts_by_dhis_orgunit',
-    'message_queue',
-  ],
-  'medic-client': [
-    'contacts_by_last_visited',
-    'contacts_by_parent',
-    'contacts_by_phone',
-    'contacts_by_place',
-    'contacts_by_reference',
-    'contacts_by_type',
-    'data_records_by_type',
-    'doc_by_type',
-    'docs_by_id_lineage',
-    'messages_by_contact_date',
-    'registered_patients',
-    'reports_by_date',
-    'reports_by_form',
-    'reports_by_place',
-    'reports_by_subject',
-    'reports_by_validity',
-    'reports_by_verification',
-    'tasks_by_contact',
-    'visits_by_date',
-  ],
-  'medic-conflicts': [
-    'conflicts',
-  ],
-  'medic-sms': [
-    'gateway_messages_by_state',
-    'messages_by_gateway_ref',
-    'messages_by_last_updated_state',
-    'messages_by_uuid',
-  ],
+  'medic': {
+    'medic-offline-freetext': [
+      'contacts_by_freetext',
+      'contacts_by_type_freetext',
+      'reports_by_freetext',
+    ],
+    'medic': [
+      'contacts_by_depth',
+      'contacts_by_primary_contact',
+      'doc_summaries_by_id',
+      'docs_by_shortcode',
+      'messages_by_state',
+      'reports_by_form_and_parent',
+      'reports_by_form_year_month_parent_reported_date',
+      'reports_by_form_year_week_parent_reported_date',
+      'tasks_in_terminal_state',
+    ],
+    'medic-admin': [
+      'contacts_by_dhis_orgunit',
+      'message_queue',
+    ],
+    'medic-client': [
+      'contacts_by_last_visited',
+      'contacts_by_parent',
+      'contacts_by_phone',
+      'contacts_by_place',
+      'contacts_by_reference',
+      'contacts_by_type',
+      'data_records_by_type',
+      'doc_by_type',
+      'docs_by_id_lineage',
+      'messages_by_contact_date',
+      'registered_patients',
+      'reports_by_date',
+      'reports_by_form',
+      'reports_by_place',
+      'reports_by_subject',
+      'reports_by_validity',
+      'reports_by_verification',
+      'tasks_by_contact',
+      'visits_by_date',
+    ],
+    'medic-conflicts': [
+      'conflicts',
+    ],
+    'medic-sms': [
+      'gateway_messages_by_state',
+      'messages_by_gateway_ref',
+      'messages_by_last_updated_state',
+      'messages_by_uuid',
+    ],
+  },
+  'sentinel': {
+    'sentinel': [
+      'outbound_push_tasks',
+    ],
+  },
+  'users-meta': {
+    'users-meta': [
+      'device_by_user',
+      'feedback_by_date',
+    ],
+  },
+  '_users': {
+    'users': [
+      'users_by_field',
+    ],
+  },
+  'medic-user': {
+    'medic-user': [
+      'read',
+    ],
+  },
+  'logs': {
+    'logs': [
+      'connected_users',
+      'replication_limit',
+    ],
+  },
 };
 
 // Build VIEWS from the ddoc mapping. Each constant is a 'ddoc/view' path string.
 const VIEWS = {};
 const _viewToDdoc = {};
-for (const [ddoc, views] of Object.entries(VIEWS_BY_DDOC)) {
-  for (const view of views) {
-    const key = view.toUpperCase();
-    const path = `${ddoc}/${view}`;
-    VIEWS[key] = path;
-    _viewToDdoc[path] = { ddoc, view };
+for (const [db, ddocs] of Object.entries(VIEWS_BY_DDOC)) {
+  for (const [ddoc, views] of Object.entries(ddocs)) {
+    for (const view of views) {
+      const key = view.toUpperCase();
+      const path = `${ddoc}/${view}`;
+      VIEWS[key] = path;
+      _viewToDdoc[path] = { db, ddoc, view };
+    }
   }
 }
-
-// Views in non-medic-db databases (not in VIEWS_BY_DDOC)
-VIEWS.OUTBOUND_PUSH_TASKS = 'sentinel/outbound_push_tasks';
-VIEWS.DEVICE_BY_USER = 'users-meta/device_by_user';
-VIEWS.FEEDBACK_BY_DATE = 'users-meta/feedback_by_date';
-VIEWS.USERS_BY_FIELD = 'users/users_by_field';
-VIEWS.READ = 'medic-user/read';
-VIEWS.CONNECTED_USERS = 'logs/connected_users';
-VIEWS.REPLICATION_LIMIT = 'logs/replication_limit';
-
-// Register non-medic-db views in the lookup
-[
-  VIEWS.OUTBOUND_PUSH_TASKS,
-  VIEWS.DEVICE_BY_USER,
-  VIEWS.FEEDBACK_BY_DATE,
-  VIEWS.USERS_BY_FIELD,
-  VIEWS.READ,
-  VIEWS.CONNECTED_USERS,
-  VIEWS.REPLICATION_LIMIT,
-].forEach(path => {
-  const [ddoc, view] = path.split('/');
-  _viewToDdoc[path] = { ddoc, view };
-});
 
 Object.freeze(VIEWS);
 
