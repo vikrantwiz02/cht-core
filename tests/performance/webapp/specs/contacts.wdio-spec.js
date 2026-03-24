@@ -80,11 +80,11 @@ describe('contacts', () => {
     it('measure contacts scroll', async () => {
       await commonElements.goToPeople();
       pagePerformance.track('contacts - first scroll');
-      await commonElements.loadNextInfiniteScrollPage();
+      await commonElements.loadNextInfiniteScrollPage('people');
       pagePerformance.record();
 
       pagePerformance.track('contacts - second scroll');
-      await commonElements.loadNextInfiniteScrollPage();
+      await commonElements.loadNextInfiniteScrollPage('people');
       pagePerformance.record();
     });
   }

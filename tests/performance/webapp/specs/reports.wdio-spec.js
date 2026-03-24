@@ -35,15 +35,15 @@ describe('reports', () => {
   it('measure reports initial load', async () => {
     await commonElements.goToReports('', false);
     pagePerformance.track('reports - first load');
-    await reportsPage.waitForReportsLoaded(LOAD_TIMEOUT);
+    await reportsPage.waitForReportsLoaded('reports', LOAD_TIMEOUT);
     pagePerformance.record();
 
     pagePerformance.track('reports - first scroll');
-    await commonPage.loadNextInfiniteScrollPage(LOAD_TIMEOUT);
+    await commonPage.loadNextInfiniteScrollPage('reports', LOAD_TIMEOUT);
     pagePerformance.record();
 
     pagePerformance.track('reports - second scroll');
-    await commonPage.loadNextInfiniteScrollPage(LOAD_TIMEOUT);
+    await commonPage.loadNextInfiniteScrollPage('reports', LOAD_TIMEOUT);
     pagePerformance.record();
   });
 
@@ -54,11 +54,11 @@ describe('reports', () => {
     pagePerformance.record();
 
     pagePerformance.track('reports - first scroll');
-    await commonPage.loadNextInfiniteScrollPage(LOAD_TIMEOUT);
+    await commonPage.loadNextInfiniteScrollPage('reports', LOAD_TIMEOUT);
     pagePerformance.record();
 
     pagePerformance.track('reports - second scroll');
-    await commonPage.loadNextInfiniteScrollPage(LOAD_TIMEOUT);
+    await commonPage.loadNextInfiniteScrollPage('reports', LOAD_TIMEOUT);
     pagePerformance.record();
   });
 
