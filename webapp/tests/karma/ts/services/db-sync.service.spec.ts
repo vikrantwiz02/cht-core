@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import sinon from 'sinon';
 import { expect } from 'chai';
 import { Store } from '@ngrx/store';
-import { DOC_IDS, DOC_TYPES, REPLICATED_DDOCS } from '@medic/constants';
+import { DDOC_IDS, DOC_IDS, DOC_TYPES } from '@medic/constants';
 
 import { SessionService } from '@mm-services/session.service';
 import { RulesEngineService } from '@mm-services/rules-engine.service';
@@ -1164,7 +1164,7 @@ describe('DBSync service', () => {
     });
 
     it('does not replicate the ddoc', () => {
-      const actual = filterFunction({ _id: REPLICATED_DDOCS[0] });
+      const actual = filterFunction({ _id: DDOC_IDS.MEDIC_CLIENT });
       expect(actual).to.equal(false);
     });
 

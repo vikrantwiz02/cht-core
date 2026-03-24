@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-import { REPLICATED_DDOCS } from '@medic/constants';
+import { DDOC_IDS } from '@medic/constants';
 import { DbService } from '@mm-services/db.service';
 
 @Injectable({
@@ -31,7 +31,7 @@ export class VersionService {
 
   getLocal () {
     return this.dbService.get()
-      .get(REPLICATED_DDOCS[0])
+      .get(DDOC_IDS.MEDIC_CLIENT)
       .then(ddoc => {
         return {
           version: this.getDeployVersion(ddoc.build_info),
@@ -52,7 +52,7 @@ export class VersionService {
     // changed from _all_docs to get doc because _all_docs without include_docs will need to get all allowed doc ids to
     // determine whether the doc is allowed or not.
     return this.dbService.get({ remote: true })
-      .get(REPLICATED_DDOCS[0])
+      .get(DDOC_IDS.MEDIC_CLIENT)
       .then(ddoc => this.formatRev(ddoc._rev));
   }
 }

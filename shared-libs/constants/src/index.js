@@ -99,6 +99,7 @@ const VIEWS_BY_DDOC = {
       'messages_by_last_updated_state',
       'messages_by_uuid',
     ],
+    'medic-scripts': [],
   },
   'sentinel': {
     'sentinel': [

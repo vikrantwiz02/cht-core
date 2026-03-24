@@ -10,7 +10,7 @@ const environment = require('@medic/environment');
 
 const { assert } = require('chai');
 const {
-  CONTACT_TYPES, VIEWS, NOUVEAU_INDEXES, nouveauUrl,
+  CONTACT_TYPES, DDOC_IDS, VIEWS, NOUVEAU_INDEXES, nouveauUrl,
   REPLICATED_DDOCS, getDdoc, getViewName,
 } = require('@medic/constants');
 
@@ -1067,7 +1067,7 @@ describe('Authorization service', () => {
     it('returns true when it is replicated ddoc or user contact', () => {
       service
         .allowedDoc(
-          REPLICATED_DDOCS[1],
+          DDOC_IDS.MEDIC_CLIENT,
           { userCtx },
           { docsByReplicationKey: { key: '_all' }, contactsByDepth: null}
         )

@@ -12,7 +12,7 @@ const reportsPage = require('@page-objects/default/reports/reports.wdio.page');
 const pregnancyFactory = require('@factories/cht/reports/pregnancy');
 const genericForm = require('@page-objects/default/enketo/generic-form.wdio.page');
 const fs = require('fs');
-const { CONTACT_TYPES, REPLICATED_DDOCS } = require('@medic/constants');
+const { CONTACT_TYPES, DDOC_IDS } = require('@medic/constants');
 const {
   destroyDbInBrowser,
   getTelemetryFromBrowser,
@@ -108,7 +108,7 @@ describe('Telemetry', () => {
     await commonPage.goToReports();
     await commonPage.sync();
 
-    const replicatedDdoc = await utils.getDoc(REPLICATED_DDOCS[0]);
+    const replicatedDdoc = await utils.getDoc(DDOC_IDS.MEDIC_CLIENT);
 
 
     const telemetryEntry = (await getTelemetryFromUserMetaDb(user.username, user.password))[0];

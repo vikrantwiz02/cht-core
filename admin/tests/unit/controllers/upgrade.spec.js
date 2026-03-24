@@ -1,7 +1,7 @@
 describe('UpgradeCtrl controller', () => {
   'use strict';
 
-  const { REPLICATED_DDOCS } = require('@medic/constants');
+  const { DDOC_IDS } = require('@medic/constants');
   const expect = chai.expect;
 
   let version;
@@ -767,7 +767,7 @@ describe('UpgradeCtrl controller', () => {
         .onCall(0).resolves({ data: { upgradeDoc: undefined  } })
         .onCall(1).resolves({ data: { upgradeDoc: { up: 'grade' }, indexers: [] } })
         .onCall(2).resolves({ data: { upgradeDoc: undefined, indexers: [] } });
-      const compareResponse = [{ ddoc: REPLICATED_DDOCS[0], db: 'medic' }];
+      const compareResponse = [{ ddoc: DDOC_IDS.MEDIC_CLIENT, db: 'medic' }];
       http.post.withArgs('/api/v2/upgrade/compare').resolves({ data: compareResponse });
       http.post.withArgs('/api/v2/upgrade').resolves();
       http.get.withArgs('/api/v2/upgrade/can-upgrade').resolves({ data: { ok: true } });

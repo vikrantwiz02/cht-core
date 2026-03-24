@@ -70,6 +70,9 @@ const setBuildInfo = () => {
     }
     const ddocs = fs.readdirSync(dbPath);
     ddocs.forEach(ddoc => {
+      if (ddoc === 'views') {
+        return; // skip flat views directory
+      }
       copyBuildInfo(path.join(ddocsBuildPath, database, ddoc, 'build_info'));
     });
   });
@@ -203,6 +206,9 @@ const setDdocsVersion = () => {
     }
     const ddocs = fs.readdirSync(dbPath);
     ddocs.forEach(ddoc => {
+      if (ddoc === 'views') {
+        return; // skip flat views directory
+      }
       fs.writeFileSync(path.resolve(dbPath, ddoc, 'version'), version);
     });
   });

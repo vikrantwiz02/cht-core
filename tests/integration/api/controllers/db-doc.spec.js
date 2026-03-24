@@ -4,7 +4,7 @@ const utils = require('@utils');
 const sentinelUtils = require('@utils/sentinel');
 const constants = require('@constants');
 const uuid = require('uuid').v4;
-const { CONTACT_TYPES, REPLICATED_DDOCS } = require('@medic/constants');
+const { CONTACT_TYPES, DDOC_IDS, REPLICATED_DDOCS } = require('@medic/constants');
 
 const password = 'passwordSUP3RS3CR37!';
 const ERROR_TEXT = '403 - {"error":"forbidden","reason":"Insufficient privileges"}';
@@ -2508,7 +2508,7 @@ describe('db-doc handler', () => {
 
       return Promise
         .all([
-          utils.requestOnTestDb(_.defaults({ path: `/${REPLICATED_DDOCS[0]}` }, request, offlineRequestOptions))
+          utils.requestOnTestDb(_.defaults({ path: `/${DDOC_IDS.MEDIC_CLIENT}` }, request, offlineRequestOptions))
             .catch(err => err),
           utils.requestOnTestDb(_.defaults({ path: '/_design/medic' }, request, offlineRequestOptions))
             .catch(err => err),
@@ -2532,7 +2532,7 @@ describe('db-doc handler', () => {
 
       return Promise
         .all([
-          utils.requestOnTestDb(_.defaults({ path: `/${REPLICATED_DDOCS[0]}` }, request, offlineRequestOptions))
+          utils.requestOnTestDb(_.defaults({ path: `/${DDOC_IDS.MEDIC_CLIENT}` }, request, offlineRequestOptions))
             .catch(err => err),
           utils.requestOnTestDb(_.defaults({ path: '/_design/medic' }, request, offlineRequestOptions))
             .catch(err => err),
@@ -2540,7 +2540,7 @@ describe('db-doc handler', () => {
             .catch(err => err),
           utils.requestOnTestDb(_.defaults({ path: '/_design/medic-admin' }, request, offlineRequestOptions))
             .catch(err => err),
-          utils.requestOnMedicDb(_.defaults({ path: `/${REPLICATED_DDOCS[0]}` }, request, offlineRequestOptions))
+          utils.requestOnMedicDb(_.defaults({ path: `/${DDOC_IDS.MEDIC_CLIENT}` }, request, offlineRequestOptions))
             .catch(err => err),
           utils.requestOnMedicDb(_.defaults({ path: '/_design/medic' }, request, offlineRequestOptions))
             .catch(err => err),

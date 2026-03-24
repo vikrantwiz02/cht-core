@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const utils = require('@utils');
 const constants = require('@constants');
-const { DOC_IDS, CONTACT_TYPES, REPLICATED_DDOCS } = require('@medic/constants');
+const { DDOC_IDS, DOC_IDS, CONTACT_TYPES } = require('@medic/constants');
 const moment = require('moment');
 const semver = require('semver');
 
@@ -172,7 +172,7 @@ describe('routing', () => {
       return Promise.all([
         utils.request(Object.assign({ path: '/api/deploy-info' }, onlineRequestOptions)),
         utils.request(Object.assign({ path: '/api/deploy-info' }, offlineRequestOptions)),
-        utils.requestOnTestDb(`/${REPLICATED_DDOCS[0]}`),
+        utils.requestOnTestDb(`/${DDOC_IDS.MEDIC_CLIENT}`),
       ]).then(([ deployInfoOnline, deployInfoOffline, ddoc ]) => {
         expect(
           semver.valid(deployInfoOnline.version),
