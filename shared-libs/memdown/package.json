@@ -7,8 +7,5 @@
     "test": ""
   },
   "author": "",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "@medic/constants": "file:../constants"
-  }
+  "license": "Apache-2.0"
 }
