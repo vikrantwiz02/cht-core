@@ -10,7 +10,8 @@
     "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo",
   },
   "files": [
-    "src/auth.js"
+    "src/auth.js",
+    "src/medic-constants.d.ts"
   ],
   "include": [
     "src/**/*.ts",

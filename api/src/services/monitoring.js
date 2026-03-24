@@ -192,7 +192,7 @@ const fetchNouveauIndexInfosForDb = (db) => Promise.all(
   NOUVEAU_INDEXES_TO_MONITOR[db].map(index => {
     return fetchNouveauIndexInfo(DBS_TO_MONITOR[db], getDdoc(index), getViewName(index));
   }),
-).then((nouveauIndexInfos) => nouveauIndexInfos.filter(info => info));
+).then((nouveauIndexInfos) => nouveauIndexInfos.filter(Boolean));
 
 const fetchAllNouveauIndexInfos = () => Promise.all(
   Object.keys(NOUVEAU_INDEXES_TO_MONITOR).map(fetchNouveauIndexInfosForDb),
