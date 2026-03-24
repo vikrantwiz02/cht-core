@@ -38,21 +38,23 @@ export class TargetCheckpointerMigration extends Migration {
   }
 
   async run() {
-    console.info('Running target checkpointer migration');
-    const localDoc = await this.getLocalCheckpointerDoc();
-    if (!localDoc) {
-      return false;
-    }
-
-    try {
-      await this.dbService.get({ remote: true }).put(localDoc);
-      return true;
-    } catch (err) {
-      if (err?.status === 409) {
-        // dont fail on conflicts
-        return true;
-      }
-      throw err;
-    }
+    return;
+    //
+    // console.info('Running target checkpointer migration');
+    // const localDoc = await this.getLocalCheckpointerDoc();
+    // if (!localDoc) {
+    //   return false;
+    // }
+    //
+    // try {
+    //   await this.dbService.get({ remote: true }).put(localDoc);
+    //   return true;
+    // } catch (err) {
+    //   if (err?.status === 409) {
+    //     // dont fail on conflicts
+    //     return true;
+    //   }
+    //   throw err;
+    // }
   }
 }

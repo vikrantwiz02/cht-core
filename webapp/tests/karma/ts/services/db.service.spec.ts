@@ -1,16 +1,16 @@
-import { TestBed, tick, fakeAsync, waitForAsync } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import sinon from 'sinon';
 import * as chai from 'chai';
+import { assert, expect } from 'chai';
 import * as chaiExclude from 'chai-exclude';
-//@ts-ignore
-chai.use(chaiExclude);
-import { expect, assert } from 'chai';
 import { NgZone } from '@angular/core';
 import { v4 as uuidv4 } from 'uuid';
 
 import { DbService } from '@mm-services/db.service';
 import { SessionService } from '@mm-services/session.service';
 import { LocationService } from '@mm-services/location.service';
+//@ts-ignore
+chai.use(chaiExclude);
 
 describe('Db Service', () => {
   let service:DbService;
@@ -236,6 +236,7 @@ describe('Db Service', () => {
   describe('method wrapping', () => {
     beforeEach(() => {
       window.PouchDB = require('pouchdb-browser').default;
+      window.PouchDB.plugin(require('pouchdb-adapter-indexeddb').default);
       // avoid the 2dbs being initialized at the startup
       // we're just using 1 set of stubs so the calls will be mirrored if requiring 2 dbs
       sessionService.isOnlineOnly.returns(false);

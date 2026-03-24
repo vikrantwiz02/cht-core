@@ -57,7 +57,7 @@ const feedbackDocsReadScript = async () => {
   for (const metaDbName of metaDbList) {
     const nameStripped = metaDbName.name.replace('_pouch_', '');
     // eslint-disable-next-line no-undef
-    const metaDb = new PouchDB(nameStripped);
+    const metaDb = new PouchDB(nameStripped, { adapter: 'indexeddb' });
     const result = await metaDb.allDocs({ include_docs: true, startkey: 'feedback-', endkey: 'feedback-\ufff0' });
     feedbackDocs[nameStripped] = result.rows;
   }

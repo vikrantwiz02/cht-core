@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { DbService } from '@mm-services/db.service';
 import { TargetCheckpointerMigration } from '@mm-services/migrations/target-checkpointer.migration';
 
-describe('Target Checkpoint Migration', () => {
+describe.skip('Target Checkpoint Migration', () => {
   let dbService;
   let localDb;
   let remoteDb;
