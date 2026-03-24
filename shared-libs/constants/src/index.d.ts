@@ -3,6 +3,7 @@ export declare const DOC_IDS: {
   readonly SETTINGS: string;
   readonly RESOURCES: string;
   readonly PARTNERS: string;
+  readonly PRIVACY_POLICIES: string;
 };
 
 export declare const CONTACT_TYPES: {
