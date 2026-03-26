@@ -27,8 +27,8 @@ export class UiExtensionsService {
   private initialized;
 
   constructor(
-    private http: HttpClient,
-    private sessionService: SessionService,
+    private readonly http: HttpClient,
+    private readonly sessionService: SessionService,
   ) { }
 
   isInitialized() {
