@@ -19,6 +19,8 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
         - env:
+            - name: NODE_ENV
+              value: '{{ .Values.api.node_env | default "production" }}'
             - name: BUILDS_URL
               value: {{ .Values.upstream_servers.builds_url | default "https://staging.dev.medicmobile.org/_couch/builds_4" }}
             - name: COUCH_URL
@@ -36,3 +38,4 @@ spec:
           resources: {}
       restartPolicy: Always
 
+      

@@ -18,6 +18,8 @@ spec:
     spec:
       containers:
         - env:
+            - name: NODE_ENV
+              value: '{{ .Values.sentinel.node_env | default "production" }}'
             - name: API_HOST
               value: api.{{ .Values.namespace }}.svc.cluster.local
             - name: COUCH_URL
@@ -33,3 +35,4 @@ spec:
           resources: {}
       restartPolicy: Always
 status: {}
+
