@@ -567,8 +567,7 @@ export class EnketoService {
     if (!valid) {
       throw new Error('Form is invalid');
     }
-
-    $('form.or').trigger('beforesave');
+    form.view.html.dispatchEvent(new CustomEvent('before-save', { bubbles: true }));
   }
 
   async completeNewReport(formInternalId, form, formDoc, contact) {

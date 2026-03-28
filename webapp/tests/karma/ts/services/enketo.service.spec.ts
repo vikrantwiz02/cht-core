@@ -482,6 +482,21 @@ describe('Enketo service', () => {
         });
     });
 
+    it('dispatches before-save event so end meta field is correctly populated', async () => {
+      form.validate.resolves(true);
+      const content = loadXML('sally-lmp');
+      form.getDataStr.returns(content);
+      const dispatchEventStub = sinon.stub(form.view.html, 'dispatchEvent');
+
+      await service.completeNewReport('V', form, { doc: { } }, { _id: '123', phone: '555' });
+
+      expect(dispatchEventStub.callCount).to.equal(1);
+      const event = dispatchEventStub.args[0][0];
+      expect(event).to.be.instanceOf(CustomEvent);
+      expect(event.type).to.equal('before-save');
+      expect(event.bubbles).to.be.true;
+    });
+
     it('creates report', () => {
       form.validate.resolves(true);
       const content = loadXML('sally-lmp');
@@ -1052,6 +1067,31 @@ describe('Enketo service', () => {
           // @ts-ignore
           expect(inputNoDataset.dataset).to.be.undefined;
         });
+    });
+
+    it('dispatches before-save event so end meta field is correctly populated', async () => {
+      form.validate.resolves(true);
+      const content = loadXML('sally-lmp');
+      form.getDataStr.returns(content);
+      getReport.resolves({
+        _id: '6',
+        _rev: '1-abc',
+        form: 'V',
+        fields: { name: 'Silly' },
+        content: '<doc><name>Silly</name></doc>',
+        content_type: 'xml',
+        type: 'data_record',
+        reported_date: 500,
+      });
+      const dispatchEventStub = sinon.stub(form.view.html, 'dispatchEvent');
+
+      await service.completeExistingReport(form, { doc: { } }, '6');
+
+      expect(dispatchEventStub.callCount).to.equal(1);
+      const event = dispatchEventStub.args[0][0];
+      expect(event).to.be.instanceOf(CustomEvent);
+      expect(event.type).to.equal('before-save');
+      expect(event.bubbles).to.be.true;
     });
 
     it('updates report', () => {
