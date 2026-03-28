@@ -56,10 +56,10 @@ const SIBLINGS = [
 describe('Deduplicate', () => {
   let service;
   let telemetryService;
-  let clock;
+  let xmlFormsContextUtilsService;
+  const REFERENCE_DATE = new Date('2025-11-11');
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers({ now: new Date('2025-11-11') });
     telemetryService = {
       record: sinon.stub(),
     };
@@ -78,30 +78,39 @@ describe('Deduplicate', () => {
     });
 
     service = TestBed.inject(DeduplicateService);
+    xmlFormsContextUtilsService = TestBed.inject(XmlFormsContextUtilsService);
+    sinon.stub(xmlFormsContextUtilsService, 'ageInYears').callsFake((contact) => {
+      return xmlFormsContextUtilsService.getDateDiff(contact, 'years', REFERENCE_DATE);
+    });
   });
 
   afterEach(() => {
     sinon.restore();
-    clock.restore();
   });
 
   describe('getDuplicates', () => {
     it('should return duplicates based on default matching', () => {
       const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS);
       expect(results).to.deep.equal([SIBLINGS[1], SIBLINGS[0]]);
-      expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2)).to.be.true;
+      const recordCalledCorrectly = telemetryService.record
+        .calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2);
+      expect(recordCalledCorrectly).to.be.true;
     });
 
     it('should return duplicates based on default matching with invalid expression', () => {
       const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { expression: true });
       expect(results).to.deep.equal([SIBLINGS[1], SIBLINGS[0]]);
-      expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2)).to.be.true;
+      const recordCalledCorrectly = telemetryService.record
+        .calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2);
+      expect(recordCalledCorrectly).to.be.true;
     });
 
     it('should not return duplicates when the expression is disabled', () => {
       const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { disabled: true });
       expect(results).to.be.empty;
-      expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 0)).to.be.true;
+      const recordCalledCorrectly = telemetryService.record
+        .calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 0);
+      expect(recordCalledCorrectly).to.be.true;
     });
 
     it('should return duplicates for custom expression', () => {
@@ -112,7 +121,9 @@ describe('Deduplicate', () => {
         { expression: 'current.reported_date === existing.reported_date' }
       );
       expect(results).to.deep.equal([SIBLINGS[3]]);
-      expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 1)).to.be.true;
+      const recordCalledCorrectly = telemetryService.record
+        .calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 1);
+      expect(recordCalledCorrectly).to.be.true;
     });
   });
 });
