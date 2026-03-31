@@ -9,10 +9,12 @@ api:
   service:
     type: ClusterIP # DEFAULT: Good default for internal services
   node_env: "production" # DEFAULT: Node environment for API service
+  log_level: "info" # DEFAULT: Log level for API service
 
 # Sentinel Service configuration
 sentinel:
   node_env: "production" # DEFAULT: Node environment for Sentinel service
+  log_level: "info" # DEFAULT: Log level for Sentinel service
 
 # If images are cached, the same image tag will never be pulled twice. For development, this means that it's not
 # possible to upgrade to a newer version of the same branch, as the old image will always be reused.

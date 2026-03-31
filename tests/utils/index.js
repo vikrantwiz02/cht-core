@@ -1209,7 +1209,8 @@ const generateComposeFiles = async () => {
     const testComposePath = getTestComposeFilePath(file);
 
     const template = await fs.promises.readFile(templatePath, 'utf-8');
-    await fs.promises.writeFile(testComposePath, mustache.render(template, view));
+    const compiled = mustache.render(template, view);
+    await fs.promises.writeFile(testComposePath, compiled);
   }
 };
 
