@@ -8,6 +8,7 @@ import { AuthDirective } from '@mm-directives/auth.directive';
 import { MatIcon } from '@angular/material/icon';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RelativeDatePipe } from '@mm-pipes/date.pipe';
+import { ResourceIconPipe } from '@mm-pipes/resource-icon.pipe';
 
 import { GlobalActions } from '@mm-actions/global';
 
@@ -16,6 +17,7 @@ import { LocationService } from '@mm-services/location.service';
 import { DBSyncService } from '@mm-services/db-sync.service';
 import { ModalService } from '@mm-services/modal.service';
 import { StorageInfoService } from '@mm-services/storage-info.service';
+import { UiExtensionsService } from '@mm-services/ui-extensions.service';
 
 import { filter } from 'rxjs/operators';
 import { Selectors } from '@mm-selectors/index';
@@ -36,6 +38,7 @@ import { Selectors } from '@mm-selectors/index';
     NgClass,
     TranslatePipe,
     RelativeDatePipe,
+    ResourceIconPipe,
   ],
 })
 export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, OnDestroy {
@@ -45,6 +48,8 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
   replicationStatus;
   moduleOptions: MenuOption[] = [];
   secondaryOptions: MenuOption[] = [];
+  uiExtensionOptions: MenuOption[] = [];
+  mergedOptions: MenuOption[] = [];
   adminAppPath: string = '';
 
   constructor(
@@ -54,6 +59,7 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
     protected modalService: ModalService,
     private router: Router,
     protected readonly storageInfoService: StorageInfoService,
+    private readonly uiExtensionsService: UiExtensionsService,
   ) {
     super(store, dbSyncService, modalService, storageInfoService);
     this.globalActions = new GlobalActions(store);
@@ -63,6 +69,7 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
     super.ngOnInit();
     this.adminAppPath = this.locationService.adminPath;
     this.setModuleOptions();
+    this.setUiExtensionOptions();
     this.setSecondaryOptions();
     this.additionalSubscriptions();
     this.subscribeToRouter();
@@ -137,6 +144,28 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
     ];
   }
 
+  private async setUiExtensionOptions() {
+    await this.uiExtensionsService.isInitialized();
+    const extensions = this.uiExtensionsService.getPropertiesByType('app_drawer_tab');
+    this.uiExtensionOptions = extensions
+      .filter(ext => ext.title)
+      .map(ext => ({
+        routerLink: `ui-extensions/${ext.id}`,
+        translationKey: ext.title!,
+        resourceIcon: ext.icon,
+        canDisplay: true,
+      }));
+    this.buildMergedOptions();
+  }
+
+  private buildMergedOptions() {
+    this.mergedOptions = [
+      ...this.moduleOptions,
+      ...this.uiExtensionOptions,
+      ...this.secondaryOptions,
+    ];
+  }
+
   private setSecondaryOptions(showPrivacyPolicy = false) {
     this.secondaryOptions = [
       {
@@ -170,11 +199,13 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
         click: () => this.openFeedback()
       },
     ];
+    this.buildMergedOptions();
   }
 }
 
 interface MenuOption {
-  icon: string;
+  icon?: string;
+  resourceIcon?: string;
   translationKey: string;
   routerLink?: string;
   hasPermissions?: string;

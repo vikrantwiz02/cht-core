@@ -231,7 +231,7 @@ describe('UiExtensionsService', () => {
 
       expect(result).to.not.be.undefined;
       expect(result!.properties.id).to.equal('ext-1');
-      expect(result!.Element).to.be.null;
+      expect(result!.Element).to.be.undefined;
     });
 
     it('should correctly return module.exports from script', async () => {
@@ -243,7 +243,7 @@ describe('UiExtensionsService', () => {
       const result = await service.getExtension('ext-1');
 
       expect(result!.Element).to.be.a('function');
-      expect(result!.Element()).to.equal('hello');
+      expect((result!.Element as any)()).to.equal('hello');
     });
   });
 });
