@@ -509,9 +509,10 @@ export class FormatDataRecordService {
     const hide = doc.hidden_fields || [];
     hide.push('inputs');
     return _.filter(fields, (field) => {
+      const normalizedLabel = field.label.replace(/\.\d+\./g, '.').replace(/\.\d+$/, '');
       return _.every(hide, (h) => {
         const hiddenLabel = label + '.' + h;
-        return hiddenLabel !== field.label && field.label.indexOf(hiddenLabel + '.') !== 0;
+        return hiddenLabel !== normalizedLabel && normalizedLabel.indexOf(hiddenLabel + '.') !== 0;
       });
     });
   }

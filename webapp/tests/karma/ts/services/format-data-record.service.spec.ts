@@ -120,6 +120,30 @@ describe('FormatDataRecord service', () => {
     });
   });
 
+  it('hides fields inside repeats when hidden_fields uses array-index-free paths', () => {
+    const report = {
+      _id: 'my-report',
+      form: 'my-form',
+      content_type: 'xml',
+      hidden_fields: ['items.hidden_tag'],
+      fields: {
+        items: [
+          { name: 'Item 1', hidden_tag: 'secret' },
+          { name: 'Item 2', hidden_tag: 'secret2' },
+        ]
+      }
+    };
+
+    return service.format(report).then(result => {
+      const labels = result.fields.map(f => f.label);
+      expect(labels).to.include('report.my-form.items');
+      expect(labels).to.include('report.my-form.items.0.name');
+      expect(labels).to.include('report.my-form.items.1.name');
+      expect(labels).not.to.include('report.my-form.items.0.hidden_tag');
+      expect(labels).not.to.include('report.my-form.items.1.hidden_tag');
+    });
+  });
+
   it('returns correct deep display fields', () => {
     const report = {
       _id: 'my-report',
