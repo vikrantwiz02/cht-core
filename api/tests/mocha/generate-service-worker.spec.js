@@ -9,6 +9,7 @@ const resources = require('../../src/resources');
 const logger = require('@medic/logger');
 const loginController = require('../../src/controllers/login');
 const extensionLibsService = require('../../src/services/extension-libs');
+const uiExtensionService = require('../../src/services/ui-extension');
 const { DOC_IDS } = require('@medic/constants');
 
 describe('generate service worker', () => {
@@ -25,6 +26,8 @@ describe('generate service worker', () => {
     sinon.stub(db.medic, 'get');
     sinon.stub(db.medic, 'put');
     sinon.stub(extensionLibsService, 'getAll');
+    sinon.stub(uiExtensionService, 'getAllProperties').resolves([]);
+    sinon.stub(uiExtensionService, 'getScript').resolves();
     workboxGenerate = sinon.stub();
     clock = sinon.useFakeTimers();
 
@@ -50,6 +53,15 @@ describe('generate service worker', () => {
     loginController.renderLogin.resolves('loginpage html');
     loginController.renderPasswordReset.resolves('passwordresetpage html');
     extensionLibsService.getAll.resolves([{ name: 'bar.js', data: 'barcode' }]);
+    uiExtensionService.getAllProperties.resolves([
+      { id: 'offline-ext', roles: [{ offline: true }] },
+      { id: 'online-ext', roles: [{ offline: false }] },
+      { id: 'no-roles-ext' },
+      { id: 'no-script-ext' },
+    ]);
+    uiExtensionService.getScript.withArgs('offline-ext').resolves({ data: 'my-script' });
+    uiExtensionService.getScript.withArgs('no-roles-ext').resolves({ data: 'other extension script' });
+    uiExtensionService.getScript.withArgs('no-script-ext').resolves();
     sinon.stub(workbox, 'generateSW').returns();
     db.medic.get.resolves({ _id: DOC_IDS.SERVICE_WORKER_META });
     db.medic.put.resolves();
@@ -82,7 +94,11 @@ describe('generate service worker', () => {
         'login/*.{css,js}',
         'login/images/*.svg',
         '/extension-libs',
-        '/extension-libs/bar.js'
+        '/extension-libs/bar.js',
+        '/ui-extension',
+        '/ui-extension/offline-ext',
+        '/ui-extension/no-roles-ext',
+        '/ui-extension/no-script-ext'
       ],
       templatedURLs: {
         '/': [ 'webapp/index.html' ],
@@ -92,7 +108,11 @@ describe('generate service worker', () => {
           'webapp/appcache-upgrade.html'
         ],
         '/extension-libs': '["bar.js"]',
-        '/extension-libs/bar.js': 'barcode'
+        '/extension-libs/bar.js': 'barcode',
+        '/ui-extension': '[{"id":"offline-ext","roles":' +
+          '[{"offline":true}]},{"id":"no-roles-ext"},{"id":"no-script-ext"}]',
+        '/ui-extension/offline-ext': 'my-script',
+        '/ui-extension/no-roles-ext': 'other extension script'
       },
       ignoreURLParametersMatching: [/redirect/, /username/],
       modifyURLPrefix: {

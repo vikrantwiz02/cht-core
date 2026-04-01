@@ -8,6 +8,7 @@ const db = require('./db');
 const logger = require('@medic/logger');
 const loginController = require('./controllers/login');
 const extensionLibs = require('./services/extension-libs');
+const uiExtensionService = require('./services/ui-extension');
 const { DOC_IDS } = require('@medic/constants');
 
 const SWMETA_DOC_ID = DOC_IDS.SERVICE_WORKER_META;
@@ -70,6 +71,30 @@ const appendExtensionLibs = async (config) => {
   });
 };
 
+const appendUiExtensions = async (config) => {
+  const extensions = await uiExtensionService.getAllProperties();
+  const offlineExtensions = extensions.filter(ext => {
+    if (!ext.roles?.length) {
+      return true;
+    }
+    return ext.roles.some(role => role.offline === true);
+  });
+
+  // cache this even if there are no extensions so offline client knows
+  config.globPatterns.push('/ui-extension');
+  config.templatedURLs['/ui-extension'] = JSON.stringify(offlineExtensions);
+
+  for (const ext of offlineExtensions) {
+    const extPath = path.join('/ui-extension', ext.id);
+    config.globPatterns.push(extPath);
+    
+    const script = await uiExtensionService.getScript(ext.id);
+    if (script?.data) {
+      config.templatedURLs[extPath] = script.data;
+    }
+  }
+};
+
 // Use the workbox library to generate a service-worker script
 const writeServiceWorkerFile = async () => {
   const config = {
@@ -113,6 +138,7 @@ const writeServiceWorkerFile = async () => {
     },
   };
   await appendExtensionLibs(config);
+  await appendUiExtensions(config);
   await workbox.generateSW(config);
 };
 
