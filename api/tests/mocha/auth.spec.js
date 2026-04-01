@@ -70,7 +70,9 @@ describe('Auth', () => {
     it('returns error when it has insufficient privilege', () => {
       const userCtx = { userCtx: { name: 'steve', roles: [ 'xyz' ] } };
       const get = sinon.stub(request, 'get').resolves(userCtx);
-      sinon.stub(config, 'get').returns({ can_edit: ['abc'] });
+      sinon.stub(config, 'get');
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({ can_edit: ['abc'] });
       return auth.check({headers: []}, 'can_edit').catch(err => {
         chai.expect(get.callCount).to.equal(1);
         chai.expect(err.message).to.equal('Insufficient privileges');
@@ -90,7 +92,9 @@ describe('Auth', () => {
     it('returns username of non-admin user', () => {
       const userCtx = { userCtx: { name: 'laura', roles: [ 'xyz', 'district_admin' ] } };
       const get = sinon.stub(request, 'get').resolves(userCtx);
-      sinon.stub(config, 'get').returns({ can_edit: ['district_admin'] });
+      sinon.stub(config, 'get');
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({ can_edit: ['district_admin'] });
       return auth.check({headers: []}, 'can_edit').then(ctx => {
         chai.expect(get.callCount).to.equal(1);
         chai.expect(ctx.name).to.equal('laura');
@@ -101,7 +105,9 @@ describe('Auth', () => {
       const userCtx = { userCtx: { name: 'steve', roles: [ 'xyz', 'district_admin' ] } };
       sinon.stub(url, 'format').returns('http://abc.com');
       const get = sinon.stub(request, 'get').resolves(userCtx);
-      sinon.stub(config, 'get').returns({
+      sinon.stub(config, 'get');
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_export_messages: ['district_admin'],
         can_export_contacts: ['district_admin'],
       });
@@ -115,7 +121,9 @@ describe('Auth', () => {
       const userCtx = { userCtx: { name: 'steve', roles: [ 'xyz', 'district_admin' ] } };
       sinon.stub(url, 'format').returns('http://abc.com');
       const get = sinon.stub(request, 'get').resolves(userCtx);
-      sinon.stub(config, 'get').returns({
+      sinon.stub(config, 'get');
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_export_messages: ['district_admin'],
         can_export_server_logs: ['national_admin'],
       });
@@ -236,7 +244,8 @@ describe('Auth', () => {
     });
 
     it('succeeds when user has all required permissions', async () => {
-      config.get.returns({
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_edit: ['district_admin'],
         can_view: ['district_admin'],
       });
@@ -245,11 +254,12 @@ describe('Auth', () => {
 
       chai.expect(result).to.deep.equal(userCtx);
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.get.args).to.deep.equal([['permissions'], ['permissions']]);
+      chai.expect(config.get.args).to.deep.equal([['roles'], ['permissions'], ['roles'], ['permissions']]);
     });
 
     it('succeeds when user has any of the required permissions', async () => {
-      config.get.returns({
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_edit: ['national_admin'],
         can_delete: ['district_admin'],
       });
@@ -258,7 +268,7 @@ describe('Auth', () => {
 
       chai.expect(result).to.deep.equal(userCtx);
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.get.args).to.deep.equal([['permissions'], ['permissions']]);
+      chai.expect(config.get.args).to.deep.equal([['roles'], ['permissions'], ['roles'], ['permissions']]);
     });
 
     it('succeeds when user is online and isOnline is required', async () => {
@@ -273,7 +283,8 @@ describe('Auth', () => {
 
     it('succeeds for admin user regardless of permissions', async () => {
       userCtx.roles.push('_admin');
-      config.get.returns({
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_edit: ['other_role'],
       });
 
@@ -289,7 +300,8 @@ describe('Auth', () => {
     });
 
     it('throws PermissionError when user lacks all required permissions', async () => {
-      config.get.returns({
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_edit: ['district_admin'],
         can_delete: ['national_admin'],
       });
@@ -298,11 +310,12 @@ describe('Auth', () => {
         .to.be.rejectedWith(PermissionError, 'Insufficient privileges');
 
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.get.args).to.deep.equal([['permissions'], ['permissions']]);
+      chai.expect(config.get.args).to.deep.equal([['roles'], ['permissions'], ['roles'], ['permissions']]);
     });
 
     it('throws PermissionError when user lacks any of the required permissions', async () => {
-      config.get.returns({
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({
         can_delete: ['national_admin'],
         can_purge: ['national_admin'],
       });
@@ -311,7 +324,7 @@ describe('Auth', () => {
         .to.be.rejectedWith(PermissionError, 'Insufficient privileges');
 
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.get.args).to.deep.equal([['permissions'], ['permissions']]);
+      chai.expect(config.get.args).to.deep.equal([['roles'], ['permissions'], ['roles'], ['permissions']]);
     });
 
     it('throws PermissionError when isOnline is required but user is offline', async () => {
@@ -320,6 +333,26 @@ describe('Auth', () => {
 
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
       chai.expect(config.get.notCalled).to.be.true;
+    });
+
+    it('throws PermissionError when user role has been deleted from configured roles', async () => {
+      // User still has 'district_admin' in their _users doc, but it was removed from app_settings.roles
+      config.get.withArgs('roles').returns({ other_role: { name: 'other' } });
+      config.get.withArgs('permissions').returns({ can_edit: ['district_admin'] });
+
+      await chai.expect(auth.assertPermissions(req, { hasAll: ['can_edit'] }))
+        .to.be.rejectedWith(PermissionError, 'Insufficient privileges');
+    });
+
+    it('succeeds when user has a valid configured role with the permission', async () => {
+      // User has both 'deleted_role' (removed from app_settings.roles) and 'district_admin' (still configured)
+      userCtx.roles.push('deleted_role');
+      config.get.withArgs('roles').returns({ district_admin: { name: 'district admin' } });
+      config.get.withArgs('permissions').returns({ can_edit: ['district_admin'] });
+
+      const result = await auth.assertPermissions(req, { hasAll: ['can_edit'] });
+
+      chai.expect(result).to.deep.equal(userCtx);
     });
   });
 });

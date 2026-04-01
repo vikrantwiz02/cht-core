@@ -25,11 +25,15 @@ const get = (path, headers) => {
 };
 
 const hasPermission = (userCtx, permission) => {
-  const roles = config.get('permissions')[permission];
-  if (!roles) {
+  const configuredRoles = config.get('roles') || {};
+  const validRoles = Object.keys(configuredRoles).length
+    ? userCtx.roles.filter(role => configuredRoles[role])
+    : userCtx.roles;
+  const rolesWithPermission = config.get('permissions')[permission];
+  if (!rolesWithPermission) {
     return false;
   }
-  return _.some(roles, role => _.includes(userCtx.roles, role));
+  return _.some(rolesWithPermission, role => _.includes(validRoles, role));
 };
 
 const assertPermissions = async (req, { isOnline = false, hasAll = [], hasAny = [] }) => {

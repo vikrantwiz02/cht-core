@@ -203,5 +203,23 @@ describe('roles', () => {
 
       chai.expect(roles.hasAllPermissions(['role3'], 'permission3')).to.equal(true);
     });
+
+    it('should return false when user role has been deleted from configured roles', () => {
+      config.get.withArgs('roles').returns({ 'role2': { name: 'role2' } });
+      config.get.withArgs('permissions').returns({ 'permission1': ['role1', 'role2'] });
+      chai.expect(roles.hasAllPermissions(['role1'], 'permission1')).to.equal(false);
+    });
+
+    it('should return true when user has a valid configured role with the permission', () => {
+      config.get.withArgs('roles').returns({ 'role2': { name: 'role2' } });
+      config.get.withArgs('permissions').returns({ 'permission1': ['role1', 'role2'] });
+      chai.expect(roles.hasAllPermissions(['role1', 'role2'], 'permission1')).to.equal(true);
+    });
+
+    it('should not filter roles when no roles are configured', () => {
+      config.get.withArgs('roles').returns({});
+      config.get.withArgs('permissions').returns({ 'permission1': ['role1'] });
+      chai.expect(roles.hasAllPermissions(['role1'], 'permission1')).to.equal(true);
+    });
   });
 });

@@ -178,6 +178,40 @@ describe('CHT Script API - Auth', () => {
 
       expect(result).to.be.true;
     });
+
+    it('should return false when the user role has been deleted from the configured roles', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor' ] };
+      const chtRoles = { chw: { name: 'usertype.chw', offline: true } };
+      const userRoles = [ 'chw_supervisor' ];
+      const result = auth.hasPermissions('can_edit', userRoles, chtPermissions, chtRoles);
+
+      expect(result).to.be.false;
+    });
+
+    it('should return true when the user has a valid configured role with the permission', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor', 'chw' ] };
+      const chtRoles = { chw: { name: 'usertype.chw', offline: true } };
+      const userRoles = [ 'chw_supervisor', 'chw' ];
+      const result = auth.hasPermissions('can_edit', userRoles, chtPermissions, chtRoles);
+
+      expect(result).to.be.true;
+    });
+
+    it('should not filter roles when no chtRolesSettings is provided (backwards compatibility)', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor' ] };
+      const userRoles = [ 'chw_supervisor' ];
+      const result = auth.hasPermissions('can_edit', userRoles, chtPermissions);
+
+      expect(result).to.be.true;
+    });
+
+    it('should not filter roles when chtRolesSettings is empty (backwards compatibility)', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor' ] };
+      const userRoles = [ 'chw_supervisor' ];
+      const result = auth.hasPermissions('can_edit', userRoles, chtPermissions, {});
+
+      expect(result).to.be.true;
+    });
   });
 
   describe('hasAnyPermission', () => {
@@ -382,6 +416,28 @@ describe('CHT Script API - Auth', () => {
       const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], chtPermissions);
 
       expect(result).to.be.false;
+    });
+
+    it('should return false when the user role has been deleted from the configured roles', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor' ], can_view: [ 'chw_supervisor' ] };
+      const chtRoles = { chw: { name: 'usertype.chw', offline: true } };
+      // User still has 'chw_supervisor' in their profile, but the role is no longer in app_settings.roles
+      const userRoles = [ 'chw_supervisor' ];
+
+      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, chtPermissions, chtRoles);
+
+      expect(result).to.be.false;
+    });
+
+    it('should return true when user has a valid configured role with any of the permissions', () => {
+      const chtPermissions = { can_edit: [ 'chw_supervisor' ], can_view: [ 'chw' ] };
+      const chtRoles = { chw: { name: 'usertype.chw', offline: true } };
+      // User has 'chw_supervisor' (deleted) and 'chw' (configured), 'chw' grants can_view
+      const userRoles = [ 'chw_supervisor', 'chw' ];
+
+      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, chtPermissions, chtRoles);
+
+      expect(result).to.be.true;
     });
   });
 });

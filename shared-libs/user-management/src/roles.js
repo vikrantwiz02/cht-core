@@ -27,11 +27,15 @@ const hasOnlineRole = roles => {
 };
 
 const hasPermission = (roles, permission) => {
+  const configuredRoles = config.get('roles') || {};
+  const validRoles = Object.keys(configuredRoles).length
+    ? roles.filter(role => configuredRoles[role])
+    : roles;
   const rolesWithPermission = config.get('permissions')[permission];
   if (!rolesWithPermission) {
     return false;
   }
-  return rolesWithPermission.some(role => roles.includes(role));
+  return rolesWithPermission.some(role => validRoles.includes(role));
 };
 
 module.exports = {
