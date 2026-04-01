@@ -153,7 +153,9 @@ export class CHTDatasourceService {
           const userRoles = this.getRolesFromUser(user);
           const chtPermissionsSettings = this.getChtPermissionsFromSettings(chtSettings);
           const chtRolesSettings = this.getChtRolesFromSettings(chtSettings);
-          return dataSource.v1.hasAnyPermission(permissionsGroupList, userRoles, chtPermissionsSettings, chtRolesSettings);
+          return dataSource.v1.hasAnyPermission(
+            permissionsGroupList, userRoles, chtPermissionsSettings, chtRolesSettings
+          );
         },
         getExtensionLib: (id) => {
           return this.extensionLibs[id];

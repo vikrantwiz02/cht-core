@@ -159,8 +159,12 @@ const hasAnyPermission = (permissionsGroupList, userRoles, chtPermissionsSetting
 
   const effectiveUserRoles = filterRolesByConfigured(userRoles, chtRolesSettings);
   const hasAnyPermissionGroup = permissionsGroupList.some((permissions, i) => {
-    const hasAnyAllowed = checkUserHasPermissions(allowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, true);
-    const hasAnyDisallowed = !checkUserHasPermissions(disallowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, false);
+    const hasAnyAllowed = checkUserHasPermissions(
+      allowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, true
+    );
+    const hasAnyDisallowed = !checkUserHasPermissions(
+      disallowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, false
+    );
     // Checking the 'permission group' is valid.
     return hasAnyAllowed && !hasAnyDisallowed;
   });
