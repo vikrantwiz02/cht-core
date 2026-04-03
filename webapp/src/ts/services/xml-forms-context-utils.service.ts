@@ -12,8 +12,8 @@ import { CHTDatasourceService } from '@mm-services/cht-datasource.service';
   providedIn: 'root'
 })
 export class XmlFormsContextUtilsService {
-  constructor(private chtDatasourceService: CHTDatasourceService) {}
-
+  constructor(private readonly chtDatasourceService: CHTDatasourceService) {}
+  
   private getDateDiff(contact, unit) {
     if (!contact || !contact.date_of_birth) {
       return;
