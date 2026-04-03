@@ -3,12 +3,21 @@ import sinon from 'sinon';
 import { expect } from 'chai';
 
 import { XmlFormsContextUtilsService } from '@mm-services/xml-forms-context-utils.service';
+import { CHTDatasourceService } from '@mm-services/cht-datasource.service';
 
 describe('XmlFormsContextUtils service', () => {
   let service:XmlFormsContextUtilsService;
+  let chtDatasourceService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    chtDatasourceService = {
+      getExtensionLib: sinon.stub(),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CHTDatasourceService, useValue: chtDatasourceService },
+      ]
+    });
     service = TestBed.inject(XmlFormsContextUtilsService);
   });
 
@@ -191,6 +200,51 @@ describe('XmlFormsContextUtils service', () => {
       expect(service.levenshteinEq(false as any, false as any)).to.equal(true);
       expect(service.levenshteinEq(1 as any, 2 as any)).to.equal(false);
       expect(service.levenshteinEq([] as any, {} as any)).to.equal(false);
+    });
+  });
+
+  describe('extensionLib', () => {
+
+    it('exists', () => {
+      expect(service.extensionLib).to.not.equal(undefined);
+    });
+
+    it('should call extension lib with correct arguments and return its result', () => {
+      const libFn = sinon.stub().returns(42);
+      chtDatasourceService.getExtensionLib.withArgs('mylib.js').returns(libFn);
+
+      const result = service.extensionLib('mylib.js', 'arg1', 'arg2');
+
+      expect(result).to.equal(42);
+      expect(chtDatasourceService.getExtensionLib.calledOnceWithExactly('mylib.js')).to.be.true;
+      expect(libFn.calledOnceWithExactly('arg1', 'arg2')).to.be.true;
+    });
+
+    it('should throw error when lib is not found', () => {
+      chtDatasourceService.getExtensionLib.returns(undefined);
+
+      expect(() => service.extensionLib('unknown.js')).to.throw(
+        'Form configuration error: no extension-lib with ID "unknown.js" found'
+      );
+    });
+
+    it('should pass multiple arguments correctly', () => {
+      const libFn = sinon.stub().returns('result');
+      chtDatasourceService.getExtensionLib.returns(libFn);
+
+      service.extensionLib('lib.js', 1, 'two', { three: 3 }, [4]);
+
+      expect(libFn.calledOnceWithExactly(1, 'two', { three: 3 }, [4])).to.be.true;
+    });
+
+    it('should work with no extra arguments', () => {
+      const libFn = sinon.stub().returns('no-args');
+      chtDatasourceService.getExtensionLib.returns(libFn);
+
+      const result = service.extensionLib('lib.js');
+
+      expect(result).to.equal('no-args');
+      expect(libFn.calledOnceWithExactly()).to.be.true;
     });
   });
 });

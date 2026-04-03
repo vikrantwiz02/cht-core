@@ -149,14 +149,16 @@ export class CHTDatasourceService {
           const chtPermissionsSettings = this.getChtPermissionsFromSettings(chtSettings);
           return dataSource.v1.hasAnyPermission(permissionsGroupList, userRoles, chtPermissionsSettings);
         },
-        getExtensionLib: (id) => {
-          return this.extensionLibs[id];
-        },
+        getExtensionLib: (id) => this.getExtensionLib(id),
         analytics: {
           getTargetDocs: () => ([]),
         },
       }
     };
+  }
+
+  getExtensionLib(id: string) {
+    return this.extensionLibs[id];
   }
 
   async getDataContext() {

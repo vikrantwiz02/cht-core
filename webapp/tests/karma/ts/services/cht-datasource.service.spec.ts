@@ -125,6 +125,25 @@ describe('CHTScriptApiService service', () => {
       expect(baz).to.be.undefined;
     });
 
+    it('should return extension lib via public getExtensionLib method', async () => {
+      settingsService.get.resolves();
+      http.get.onCall(0).returns(of([ 'mylib.js' ]));
+      http.get.onCall(1).returns(of('module.exports = (a, b) => a + b'));
+      await service.isInitialized();
+
+      const lib = service.getExtensionLib('mylib.js');
+      expect(lib).to.be.a('function');
+      expect(lib(2, 3)).to.equal(5);
+    });
+
+    it('should return undefined from getExtensionLib for unknown lib', async () => {
+      settingsService.get.resolves();
+      await service.isInitialized();
+
+      const lib = service.getExtensionLib('unknown.js');
+      expect(lib).to.be.undefined;
+    });
+
   });
 
   describe('bind()', () => {

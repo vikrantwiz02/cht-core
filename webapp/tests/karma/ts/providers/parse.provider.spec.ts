@@ -146,7 +146,7 @@ describe('Parse provider', () => {
         (!contact.sex || contact.sex === 'female') && 
         (!contact.date_of_birth || (ageInYears(contact) >= 12 && ageInYears(contact) <= 49))
       `;
-      const context = new XmlFormsContextUtilsService();
+      const context = new XmlFormsContextUtilsService({ getExtensionLib: sinon.stub() } as any);
       const user = {
         parent: { type: 'health_center' },
       };
