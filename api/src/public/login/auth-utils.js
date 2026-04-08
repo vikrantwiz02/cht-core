@@ -92,7 +92,7 @@ window.AuthUtils = (function() {
     }
     try {
       return JSON.parse(decodeURIComponent(raw));
-    } catch (e) {
+    } catch {
       return [];
     }
   };
