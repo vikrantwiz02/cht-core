@@ -53,7 +53,7 @@ window.AuthUtils = (function() {
 
   const getLocale = (translations) => {
     const selectedLocale = getCookie('locale');
-    const defaultLocale = document.body.getAttribute('data-default-locale');
+    const defaultLocale = document.body.dataset.defaultLocale;
     const locale = selectedLocale || defaultLocale;
     if (translations[locale]) {
       return locale;
@@ -65,7 +65,7 @@ window.AuthUtils = (function() {
   };
 
   const parseTranslations = () => {
-    const raw = document.body.getAttribute('data-translations');
+    const raw = document.body.dataset.translations;
     return JSON.parse(decodeURIComponent(raw));
   };
 
@@ -86,7 +86,7 @@ window.AuthUtils = (function() {
   };
 
   const getRtlLocales = () => {
-    const raw = document.body.getAttribute('data-rtl-locales');
+    const raw = document.body.dataset.rtlLocales;
     if (!raw) {
       return [];
     }
