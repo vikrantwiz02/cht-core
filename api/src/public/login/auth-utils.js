@@ -85,10 +85,27 @@ window.AuthUtils = (function() {
     }
   };
 
+  const getRtlLocales = () => {
+    const raw = document.body.getAttribute('data-rtl-locales');
+    if (!raw) {
+      return [];
+    }
+    try {
+      return JSON.parse(decodeURIComponent(raw));
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const setDirection = (locale) => {
+    document.documentElement.dir = getRtlLocales().includes(locale) ? 'rtl' : 'ltr';
+  };
+
   const baseTranslate = (selectedLocale, translations) => {
     if (!selectedLocale) {
       return console.error('No enabled locales found - not translating');
     }
+    setDirection(selectedLocale);
     document
       .querySelectorAll('[translate]')
       .forEach(elem => {
@@ -124,5 +141,6 @@ window.AuthUtils = (function() {
     parseTranslations,
     baseTranslate,
     togglePassword,
+    setDirection,
   };
 })();

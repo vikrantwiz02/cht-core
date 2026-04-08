@@ -300,6 +300,38 @@ describe('login controller', () => {
         chai.expect(ssoLogin.isSsoLoginEnabled.calledOnceWithExactly()).to.be.true;
       });
     });
+
+    it('includes encoded rtlLocales when an RTL locale is enabled', () => {
+      sinon.stub(translations, 'getEnabledLocales').resolves([
+        { code: 'en', name: 'English', rtl: false },
+        { code: 'ar', name: 'عربي', rtl: true },
+      ]);
+      sinon.stub(branding, 'get').resolves(DEFAULT_BRANDING);
+      const send = sinon.stub(res, 'send');
+      sinon.stub(res, 'setHeader');
+      sinon.stub(fs.promises, 'readFile').resolves('{{ rtlLocales }}');
+      sinon.stub(config, 'getTranslations').returns({});
+
+      return controller.get(req, res).then(() => {
+        chai.expect(send.args[0][0]).to.equal(encodeURIComponent(JSON.stringify(['ar'])));
+      });
+    });
+
+    it('includes empty encoded rtlLocales when no RTL locales are configured', () => {
+      sinon.stub(translations, 'getEnabledLocales').resolves([
+        { code: 'en', name: 'English', rtl: false },
+        { code: 'fr', name: 'French', rtl: false },
+      ]);
+      sinon.stub(branding, 'get').resolves(DEFAULT_BRANDING);
+      const send = sinon.stub(res, 'send');
+      sinon.stub(res, 'setHeader');
+      sinon.stub(fs.promises, 'readFile').resolves('{{ rtlLocales }}');
+      sinon.stub(config, 'getTranslations').returns({});
+
+      return controller.get(req, res).then(() => {
+        chai.expect(send.args[0][0]).to.equal(encodeURIComponent(JSON.stringify([])));
+      });
+    });
   });
 
   describe('passwordReset', () => {
