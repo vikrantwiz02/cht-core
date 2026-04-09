@@ -8,6 +8,7 @@ const DOC_IDS = {
   RESOURCES: 'resources',
   PRIVACY_POLICIES: 'privacy-policies',
   PARTNERS: 'partners',
+  BRANDING: 'branding',
 };
 
 // Contact Types
@@ -38,7 +39,11 @@ const SENTINEL_METADATA = {
 // User Roles
 const USER_ROLES = {
   ONLINE: 'mm-online',
+  ADMIN: 'admin',
+  COUCHDB_ADMIN: '_admin',
 };
+
+const DB_ADMIN_ROLES = [USER_ROLES.ADMIN, USER_ROLES.COUCHDB_ADMIN];
 
 module.exports = {
   DOC_IDS,
@@ -46,5 +51,6 @@ module.exports = {
   HTTP_HEADERS,
   SENTINEL_METADATA,
   USER_ROLES,
+  DB_ADMIN_ROLES,
   CONTACT_TYPES,
 };

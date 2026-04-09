@@ -90,12 +90,8 @@ export class CHTDatasourceService {
     });
   }
 
-  private getChtPermissionsFromSettings(chtSettings) {
-    return chtSettings?.permissions || this.settings?.permissions;
-  }
-
-  private getChtRolesFromSettings(chtSettings) {
-    return chtSettings?.roles || this.settings?.roles;
+  private getSettings(chtSettings) {
+    return chtSettings || this.settings;
   }
 
   private getRolesFromUser(user) {
@@ -145,16 +141,12 @@ export class CHTDatasourceService {
         ...dataSource.v1,
         hasPermissions: (permissions, user?, chtSettings?) => {
           const userRoles = this.getRolesFromUser(user);
-          const chtPermissionsSettings = this.getChtPermissionsFromSettings(chtSettings);
-          const chtRolesSettings = this.getChtRolesFromSettings(chtSettings);
-          return dataSource.v1.hasPermissions(permissions, userRoles, chtPermissionsSettings, chtRolesSettings);
+          return dataSource.v1.hasPermissions(permissions, userRoles, this.getSettings(chtSettings));
         },
         hasAnyPermission: (permissionsGroupList, user?, chtSettings?) => {
           const userRoles = this.getRolesFromUser(user);
-          const chtPermissionsSettings = this.getChtPermissionsFromSettings(chtSettings);
-          const chtRolesSettings = this.getChtRolesFromSettings(chtSettings);
           return dataSource.v1.hasAnyPermission(
-            permissionsGroupList, userRoles, chtPermissionsSettings, chtRolesSettings
+            permissionsGroupList, userRoles, this.getSettings(chtSettings)
           );
         },
         getExtensionLib: (id) => {

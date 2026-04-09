@@ -3,7 +3,7 @@
  * Provides tools related to Authentication.
  */
 
-const ADMIN_ROLE = '_admin';
+const { DB_ADMIN_ROLES } = require('@medic/constants');
 const DISALLOWED_PERMISSION_PREFIX = '!';
 
 const isAdmin = (userRoles) => {
@@ -11,7 +11,7 @@ const isAdmin = (userRoles) => {
     return false;
   }
 
-  return userRoles.includes(ADMIN_ROLE);
+  return DB_ADMIN_ROLES.some(adminRole => userRoles.includes(adminRole));
 };
 
 const groupPermissions = (permissions) => {
@@ -47,10 +47,8 @@ const checkUserHasPermissions = (permissions, userRoles, chtPermissionsSettings,
 };
 
 const filterRolesByConfigured = (userRoles, chtRolesSettings) => {
-  if (!chtRolesSettings || !Object.keys(chtRolesSettings).length) {
-    return userRoles;
-  }
-  return userRoles.filter(role => role === ADMIN_ROLE || chtRolesSettings[role]);
+  const availableRoles = new Set([...DB_ADMIN_ROLES, ...Object.keys(chtRolesSettings ?? {})]);
+  return userRoles.filter(role => availableRoles.has(role));
 };
 
 const verifyParameters = (permissions, userRoles, chtPermissionsSettings) => {
@@ -92,12 +90,13 @@ const checkAdminPermissions = (disallowedGroupList, permissions, userRoles) => {
  * Verify if the user's role has the permission(s).
  * @param permissions {string | string[]} Permission(s) to verify
  * @param userRoles {string[]} Array of user roles.
- * @param chtPermissionsSettings {object} Object of configured permissions in CHT-Core's settings.
- * @param chtRolesSettings {object} Object of configured roles in CHT-Core's settings. Used to filter out deleted roles.
+ * @param settings {object} CHT settings object containing `permissions` and `roles` configuration.
  * @return {boolean}
  */
-const hasPermissions = (permissions, userRoles, chtPermissionsSettings, chtRolesSettings) => {
+const hasPermissions = (permissions, userRoles, settings) => {
   permissions = normalizePermissions(permissions);
+  const chtPermissionsSettings = settings?.permissions;
+  const chtRolesSettings = settings?.roles;
 
   if (!verifyParameters(permissions, userRoles, chtPermissionsSettings)) {
     return false;
@@ -130,12 +129,11 @@ const hasPermissions = (permissions, userRoles, chtPermissionsSettings, chtRoles
  * Verify if the user's role has all the permissions of any of the provided groups.
  * @param permissionsGroupList {string[][]} Array of groups of permissions due to the complexity of permission grouping
  * @param userRoles {string[]} Array of user roles.
- * @param chtPermissionsSettings {object} Object of configured permissions in CHT-Core's settings.
- * @param chtRolesSettings {object} Object of configured roles in CHT-Core's settings. Used to filter out deleted roles.
+ * @param settings {object} CHT settings object containing `permissions` and `roles` configuration.
  * @return {boolean}
  */
-const hasAnyPermission = (permissionsGroupList, userRoles, chtPermissionsSettings, chtRolesSettings) => {
-  if (!verifyParameters(permissionsGroupList, userRoles, chtPermissionsSettings)) {
+const hasAnyPermission = (permissionsGroupList, userRoles, settings) => {
+  if (!verifyParameters(permissionsGroupList, userRoles, settings?.permissions)) {
     return false;
   }
 
@@ -144,6 +142,9 @@ const hasAnyPermission = (permissionsGroupList, userRoles, chtPermissionsSetting
     debug('Permission groups to verify are invalid');
     return false;
   }
+
+  const chtPermissionsSettings = settings?.permissions;
+  const chtRolesSettings = settings?.roles;
 
   const allowedGroupList = [];
   const disallowedGroupList = [];

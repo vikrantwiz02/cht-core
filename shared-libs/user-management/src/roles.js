@@ -1,12 +1,11 @@
 const config = require('./libs/config');
-const { USER_ROLES } = require('@medic/constants');
+const { USER_ROLES, DB_ADMIN_ROLES } = require('@medic/constants');
 
 /**
  * this role is used in webapp bootstrap and session service to mainly determine whether the user should
  * replicate or not, without requiring access to server settings.
  */
 const ONLINE_ROLE = USER_ROLES.ONLINE;
-const DB_ADMIN_ROLES = ['admin', '_admin'];
 
 const hasRole = (userCtx, role) => {
   return userCtx?.roles?.includes(role);
@@ -24,18 +23,6 @@ const hasOnlineRole = roles => {
     ONLINE_ROLE,
   ];
   return roles.some(role => onlineRoles.includes(role));
-};
-
-const hasPermission = (roles, permission) => {
-  const configuredRoles = config.get('roles') || {};
-  const validRoles = Object.keys(configuredRoles).length
-    ? roles.filter(role => configuredRoles[role])
-    : roles;
-  const rolesWithPermission = config.get('permissions')[permission];
-  if (!rolesWithPermission) {
-    return false;
-  }
-  return rolesWithPermission.some(role => validRoles.includes(role));
 };
 
 module.exports = {
@@ -56,20 +43,4 @@ module.exports = {
   },
   isDbAdmin,
   ONLINE_ROLE,
-
-  hasAllPermissions: (roles, permissions) => {
-    if (module.exports.isDbAdmin({ roles })) {
-      return true;
-    }
-
-    if (!permissions || !roles) {
-      return false;
-    }
-
-    if (!Array.isArray(permissions)) {
-      permissions = [ permissions ];
-    }
-
-    return permissions.every(permission => hasPermission(roles, permission));
-  }
 };

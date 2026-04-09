@@ -44,6 +44,7 @@ export { DataContext } from './libs/data-context';
 export { getLocalDataContext } from './local';
 export { getRemoteDataContext } from './remote';
 export { InvalidArgumentError, ResourceNotFoundError } from './libs/error';
+export { hasPermissions, hasAnyPermission } from './auth';
 export * as Contact from './contact';
 export * as Person from './person';
 export * as Place from './place';
