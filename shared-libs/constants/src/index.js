@@ -55,11 +55,8 @@ const USER_ROLES = {
   COUCHDB_ADMIN: '_admin',
 };
 
-<<<<<<< HEAD
 const DB_ADMIN_ROLES = [USER_ROLES.ADMIN, USER_ROLES.COUCHDB_ADMIN];
 
-=======
->>>>>>> upstream/master
 // Prefixes
 const PREFIXES = {
   COUCH_USER: 'org.couchdb.user:',
@@ -74,9 +71,6 @@ module.exports = {
   USER_ROLES,
   DB_ADMIN_ROLES,
   CONTACT_TYPES,
-<<<<<<< HEAD
-=======
   STANDARD_HTTP_HEADERS,
->>>>>>> upstream/master
   PREFIXES,
 };
