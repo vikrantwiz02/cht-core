@@ -37,7 +37,7 @@ angular.module('inboxServices').factory('Auth',
             return false;
           }
 
-          return datasource.v1.hasAnyPermission(permissionsGroupList, userCtx.roles, settings.permissions);
+          return datasource.v1.hasAnyPermission(permissionsGroupList, userCtx.roles, settings);
         })
         .catch(() => false);
     };
@@ -63,7 +63,7 @@ angular.module('inboxServices').factory('Auth',
             return false;
           }
 
-          return datasource.v1.hasPermissions(permissions, userCtx.roles, settings.permissions);
+          return datasource.v1.hasPermissions(permissions, userCtx.roles, settings);
         })
         .catch(() => false);
     };

@@ -26,7 +26,12 @@
  * const myUuid = 'my-uuid';
  * const myPerson = await datasource.v1.person.getByUuid(myUuid);
  */
-import { hasAnyPermission, hasPermissions } from './auth';
+import { hasAnyPermission as hasAnyPermissionFn, hasPermissions as hasPermissionsFn } from './auth';
+// Exported as const (not re-exported) so the properties remain writable and can be stubbed in tests
+/** @see {@link hasPermissionsFn} */
+export const hasPermissions = hasPermissionsFn;
+/** @see {@link hasAnyPermissionFn} */
+export const hasAnyPermission = hasAnyPermissionFn;
 import { Nullable } from './libs/core';
 import { assertDataContext, DataContext } from './libs/data-context';
 import * as Contact from './contact';
@@ -44,7 +49,6 @@ export { DataContext } from './libs/data-context';
 export { getLocalDataContext } from './local';
 export { getRemoteDataContext } from './remote';
 export { InvalidArgumentError, ResourceNotFoundError } from './libs/error';
-export { hasPermissions, hasAnyPermission } from './auth';
 export * as Contact from './contact';
 export * as Person from './person';
 export * as Place from './place';

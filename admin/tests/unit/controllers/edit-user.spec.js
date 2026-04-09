@@ -529,16 +529,34 @@ describe('EditUserCtrl controller', () => {
               ['can_skip_password_change' ],
               [ 'district-manager', 'supervisor' ],
               {
-                can_have_multiple_places: [ 'community-health-assistant' ],
-                can_skip_password_change: [ 'community-health-assistant' ]
+                permissions: {
+                  can_have_multiple_places: [ 'community-health-assistant' ],
+                  can_skip_password_change: [ 'community-health-assistant' ]
+                },
+                roles: {
+                  'district-manager': { name: 'xyz', offline: true },
+                  'community-health-assistant': { name: 'xyz', offline: true },
+                  'data-entry': { name: 'abc' },
+                  supervisor: { name: 'qrt', offline: true },
+                  'national-manager': { name: 'national-manager', offline: false },
+                }
               }
             ],
             [
               [ 'can_have_multiple_places' ],
               [ 'community-health-assistant' ],
               {
-                can_have_multiple_places: [ 'community-health-assistant' ],
-                can_skip_password_change: [ 'community-health-assistant' ]
+                permissions: {
+                  can_have_multiple_places: [ 'community-health-assistant' ],
+                  can_skip_password_change: [ 'community-health-assistant' ]
+                },
+                roles: {
+                  'district-manager': { name: 'xyz', offline: true },
+                  'community-health-assistant': { name: 'xyz', offline: true },
+                  'data-entry': { name: 'abc' },
+                  supervisor: { name: 'qrt', offline: true },
+                  'national-manager': { name: 'national-manager', offline: false },
+                }
               }
             ]
           ]);
@@ -1145,8 +1163,17 @@ describe('EditUserCtrl controller', () => {
           ['can_skip_password_change' ],
           [ 'supervisor' ],
           {
-            can_have_multiple_places: [ 'community-health-assistant' ],
-            can_skip_password_change: [ 'community-health-assistant' ]
+            permissions: {
+              can_have_multiple_places: [ 'community-health-assistant' ],
+              can_skip_password_change: [ 'community-health-assistant' ]
+            },
+            roles: {
+              'district-manager': { name: 'xyz', offline: true },
+              'community-health-assistant': { name: 'xyz', offline: true },
+              'data-entry': { name: 'abc' },
+              supervisor: { name: 'qrt', offline: true },
+              'national-manager': { name: 'national-manager', offline: false },
+            }
           }
         )).to.be.true;
       });
@@ -1162,8 +1189,17 @@ describe('EditUserCtrl controller', () => {
           ['can_skip_password_change' ],
           [ 'community-health-assistant' ],
           {
-            can_have_multiple_places: [ 'community-health-assistant' ],
-            can_skip_password_change: [ 'community-health-assistant' ]
+            permissions: {
+              can_have_multiple_places: [ 'community-health-assistant' ],
+              can_skip_password_change: [ 'community-health-assistant' ]
+            },
+            roles: {
+              'district-manager': { name: 'xyz', offline: true },
+              'community-health-assistant': { name: 'xyz', offline: true },
+              'data-entry': { name: 'abc' },
+              supervisor: { name: 'qrt', offline: true },
+              'national-manager': { name: 'national-manager', offline: false },
+            }
           }
         )).to.be.true;
       });
