@@ -55,7 +55,7 @@ import { PrivacyPolicyComponent } from '@mm-modules/privacy-policy/privacy-polic
 import { SidebarMenuComponent } from '@mm-components/sidebar-menu/sidebar-menu.component';
 import { SnackbarComponent } from '@mm-components/snackbar/snackbar.component';
 import { TasksNotificationService } from '@mm-services/task-notifications.service';
-import { DOC_IDS, DOC_TYPES } from '@medic/constants';
+import { DOC_IDS, DOC_TYPES, PREFIXES } from '@medic/constants';
 
 const SYNC_STATUS = {
   inProgress: {
@@ -394,7 +394,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   private watchBrandingChanges() {
     this.changesService.subscribe({
       key: 'branding-icon',
-      filter: change => change.id === 'branding',
+      filter: change => change.id === DOC_IDS.BRANDING,
       callback: () => this.setAppTitle(),
     });
   }
@@ -432,7 +432,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         return (
           userCtx &&
           userCtx.name &&
-          change.id === `org.couchdb.user:${userCtx.name}`
+          change.id === `${PREFIXES.COUCH_USER}${userCtx.name}`
         );
       },
       callback: () => {

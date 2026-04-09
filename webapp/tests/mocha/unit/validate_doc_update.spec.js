@@ -2,6 +2,7 @@ const _ = require('lodash');
 const fs = require('fs');
 const assert = require('chai').assert;
 const { DOC_IDS, DOC_TYPES } = require('@medic/constants');
+const { PREFIXES } = require('@medic/constants');
 
 describe('validate doc update', () => {
 
@@ -13,7 +14,7 @@ describe('validate doc update', () => {
   // already matched before passing to the validation function.
   const getUserSettings = () => {
     return {
-      _id: 'org.couchdb.user:sally',
+      _id: PREFIXES.COUCH_USER + 'sally',
       name: 'sally',
       type: 'user-settings',
       roles: []
@@ -74,7 +75,7 @@ describe('validate doc update', () => {
       'forms': { type: 'form' },
       'translations': { type: DOC_TYPES.TRANSLATIONS },
       'extension-libs': { _id: 'extension-libs' },
-      'header logo': { _id: 'branding' },
+      'header logo': { _id: DOC_IDS.BRANDING },
       'partners': { _id: DOC_IDS.PARTNERS },
     }).forEach(([ name, doc ]) => {
       it(name, () => {
@@ -105,9 +106,9 @@ describe('validate doc update', () => {
         newDoc: { _id: 'extension-libs', field: 'mine' }
       },
       {
-        name: 'branding',
-        oldDoc: { _id: 'branding' },
-        newDoc: { _id: 'branding', field: 'mine' }
+        name: DOC_IDS.BRANDING,
+        oldDoc: { _id: DOC_IDS.BRANDING },
+        newDoc: { _id: DOC_IDS.BRANDING, field: 'mine' }
       },
       {
         name: 'partners',
@@ -173,7 +174,7 @@ describe('validate doc update', () => {
 
     it('_id must define a value after :', () => {
       const userSettings = getUserSettings();
-      userSettings._id = 'org.couchdb.user:';
+      userSettings._id = PREFIXES.COUCH_USER;
       forbiddenOnClient(
         '_id must define a value after "org.couchdb.user:". e.g. "org.couchdb.user:sally"',
         userCtx(),
