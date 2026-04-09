@@ -137,8 +137,8 @@ describe('Creating custom places', () => {
     await commonPage.goToPeople(topLevel._id);
     const displayedListOfContacts = await contactsPage.allContactsList();
     const expected = [
-      { heading: 'low-level Plural (1)', contactNames: ['lowlvl'] },
-      { heading: 'mid-level Plural (1)', contactNames: ['midLevel'] },
+      { heading: 'low-level Plural 1', contactNames: ['lowlvl'] },
+      { heading: 'mid-level Plural 1', contactNames: ['midLevel'] },
     ];
     expect(displayedListOfContacts).to.deep.equal(expected);
   });

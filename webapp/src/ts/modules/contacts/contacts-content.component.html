@@ -72,7 +72,7 @@
           <div class="col-xs-10">
             <h3>
               <span>{{group?.type?.group_key | translate}}</span>
-              <span *ngIf="group?.activeCount > 0" class="children-count">({{group.activeCount | localizeNumber}})</span>
+              <span *ngIf="group?.activeCount > 0" class="children-count">{{group.activeCount | localizeNumber}}</span>
             </h3>
           </div>
           <div *ngIf="group?.type?.person" mmAuth="can_view_tasks" class="col-xs-2 tasks-title">{{'Tasks' | translate}}</div>
