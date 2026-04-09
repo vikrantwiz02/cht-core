@@ -254,6 +254,17 @@ describe('CHT Script API - Auth', () => {
 
       expect(result).to.be.false;
     });
+
+    it('should not filter roles when settings.roles is absent (backward compatibility)', () => {
+      const settings = {
+        permissions: { can_edit: [ 'chw_supervisor' ] }
+      };
+      const userRoles = [ 'chw_supervisor' ];
+
+      const result = auth.hasPermissions('can_edit', userRoles, settings);
+
+      expect(result).to.be.true;
+    });
   });
 
   describe('hasAnyPermission', () => {
@@ -510,6 +521,18 @@ describe('CHT Script API - Auth', () => {
       };
       // User has 'chw_supervisor' (deleted) and 'chw' (configured), 'chw' grants can_view
       const userRoles = [ 'chw_supervisor', 'chw' ];
+
+      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
+
+      expect(result).to.be.true;
+    });
+
+    it('should not filter roles when settings.roles is absent (backward compatibility)', () => {
+      const settings = {
+        permissions: { can_edit: [ 'chw_supervisor' ], can_view: [ 'chw_supervisor' ] }
+        // No roles key — older app_settings format
+      };
+      const userRoles = [ 'chw_supervisor' ];
 
       const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
 
