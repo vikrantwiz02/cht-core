@@ -47,7 +47,10 @@ const checkUserHasPermissions = (permissions, userRoles, chtPermissionsSettings,
 };
 
 const filterRolesByConfigured = (userRoles, chtRolesSettings) => {
-  const availableRoles = new Set([...DB_ADMIN_ROLES, ...Object.keys(chtRolesSettings ?? {})]);
+  if (chtRolesSettings === undefined || chtRolesSettings === null) {
+    return userRoles;
+  }
+  const availableRoles = new Set([...DB_ADMIN_ROLES, ...Object.keys(chtRolesSettings)]);
   return userRoles.filter(role => availableRoles.has(role));
 };
 
