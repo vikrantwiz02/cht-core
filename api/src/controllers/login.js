@@ -189,16 +189,17 @@ const render = (page, req, extras = {}) => {
       privacyPolicy.exists(),
     ])
     .then(([ template, locales, branding, hasPrivacyPolicy ]) => {
-      const rtlLocales = locales.filter(l => l.rtl).map(l => l.key);
       const selectorLocales = locales.length < 2 ? [] : locales;
+      const defaultLocale = getBestLocaleCode(acceptLanguageHeader, locales, config.get('locale'));
+      const defaultDir = locales.find(l => l.key === defaultLocale)?.rtl ? 'rtl' : 'ltr';
       const options = Object.assign(
         {
           branding,
           locales: selectorLocales,
           hasPrivacyPolicy,
-          defaultLocale: getBestLocaleCode(acceptLanguageHeader, locales, config.get('locale')),
-          translations: getTranslationsString(page),
-          rtlLocales: encodeURIComponent(JSON.stringify(rtlLocales))
+          defaultLocale,
+          defaultDir,
+          translations: getTranslationsString(page)
         },
         extras
       );

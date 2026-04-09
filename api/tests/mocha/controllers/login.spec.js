@@ -302,7 +302,8 @@ describe('login controller', () => {
       });
     });
 
-    it('includes encoded rtlLocales when an RTL locale is enabled', () => {
+    it('sets defaultDir to rtl when the default locale is RTL', () => {
+      req.locale = 'ar';
       sinon.stub(translations, 'getEnabledLocales').resolves([
         { code: 'en', name: 'English', rtl: false },
         { code: 'ar', name: 'عربي', rtl: true },
@@ -310,15 +311,16 @@ describe('login controller', () => {
       sinon.stub(branding, 'get').resolves(DEFAULT_BRANDING);
       const send = sinon.stub(res, 'send');
       sinon.stub(res, 'setHeader');
-      sinon.stub(fs.promises, 'readFile').resolves('{{ rtlLocales }}');
+      sinon.stub(fs.promises, 'readFile').resolves('{{ defaultDir }}');
       sinon.stub(config, 'getTranslations').returns({});
 
       return controller.get(req, res).then(() => {
-        chai.expect(send.args[0][0]).to.equal(encodeURIComponent(JSON.stringify(['ar'])));
+        chai.expect(send.args[0][0]).to.equal('rtl');
       });
     });
 
-    it('includes empty encoded rtlLocales when no RTL locales are configured', () => {
+    it('sets defaultDir to ltr when the default locale is not RTL', () => {
+      req.locale = 'en';
       sinon.stub(translations, 'getEnabledLocales').resolves([
         { code: 'en', name: 'English', rtl: false },
         { code: 'fr', name: 'French', rtl: false },
@@ -326,11 +328,11 @@ describe('login controller', () => {
       sinon.stub(branding, 'get').resolves(DEFAULT_BRANDING);
       const send = sinon.stub(res, 'send');
       sinon.stub(res, 'setHeader');
-      sinon.stub(fs.promises, 'readFile').resolves('{{ rtlLocales }}');
+      sinon.stub(fs.promises, 'readFile').resolves('{{ defaultDir }}');
       sinon.stub(config, 'getTranslations').returns({});
 
       return controller.get(req, res).then(() => {
-        chai.expect(send.args[0][0]).to.equal(encodeURIComponent(JSON.stringify([])));
+        chai.expect(send.args[0][0]).to.equal('ltr');
       });
     });
   });

@@ -85,20 +85,9 @@ window.AuthUtils = (function() {
     }
   };
 
-  const getRtlLocales = () => {
-    const raw = document.body.dataset.rtlLocales;
-    if (!raw) {
-      return [];
-    }
-    try {
-      return JSON.parse(decodeURIComponent(raw));
-    } catch {
-      return [];
-    }
-  };
-
   const setDirection = (locale) => {
-    document.documentElement.dir = getRtlLocales().includes(locale) ? 'rtl' : 'ltr';
+    const localeLink = document.querySelector(`.locale[name="${locale}"]`);
+    document.documentElement.dir = localeLink?.dataset.rtl ? 'rtl' : 'ltr';
   };
 
   const baseTranslate = (selectedLocale, translations) => {
