@@ -918,6 +918,7 @@ describe('ContactsEdit component', () => {
       component.enketoContact = {
         formInstance: {
           validate: sinon.stub().resolves(true),
+          view: { html: { dispatchEvent: sinon.stub() } },
         },
         type: 'some_contact',
       };
@@ -935,6 +936,37 @@ describe('ContactsEdit component', () => {
       expect(component.duplicates).to.be.empty;
     });
 
+    it('dispatches before-save event so end meta field is correctly populated', async () => {
+      routeSnapshot.params = { type: 'clinic', parent_id: 'the_district' };
+      contactTypesService.getChildren.resolves([{ id: 'clinic' }]);
+      contactTypesService.get.resolves({
+        create_form: 'clinic_create_form_id',
+        create_key: 'clinic_create_key',
+      });
+      getContact
+        .withArgs(Qualifier.byUuid('the_district'))
+        .resolves({ _id: 'the_district', type: 'clinic' });
+      dbGet.resolves({ _id: 'clinic_create_form_id', the: 'form' });
+      const dispatchEventStub = sinon.stub();
+      const form = {
+        validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: dispatchEventStub } },
+      };
+      formService.render.resolves(form);
+      formService.saveContact.resolves({ docId: 'new_clinic_id' });
+
+      await createComponent();
+      await fixture.whenStable();
+
+      await component.save();
+
+      expect(dispatchEventStub.callCount).to.equal(1);
+      const event = dispatchEventStub.args[0][0];
+      expect(event).to.be.instanceOf(CustomEvent);
+      expect(event.type).to.equal('before-save');
+      expect(event.bubbles).to.be.true;
+    });
+
     it('when saving new contact', async () => {
       routeSnapshot.params = { type: 'clinic', parent_id: 'the_district' };
       contactTypesService.getChildren.resolves([{ id: 'clinic' }]);
@@ -948,6 +980,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'clinic_create_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
 
@@ -1002,6 +1035,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'person_edit_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
 
@@ -1055,6 +1089,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'patient_create_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
 
@@ -1105,6 +1140,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'clinic_create_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
 
