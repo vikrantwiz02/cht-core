@@ -1186,6 +1186,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'clinic_create_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
       const setEnketoError = sinon.stub(GlobalActions.prototype, 'setEnketoError');
@@ -1245,6 +1246,7 @@ describe('ContactsEdit component', () => {
       dbGet.resolves({ _id: 'clinic_create_form_id', the: 'form' });
       const form = {
         validate: sinon.stub().resolves(true),
+        view: { html: { dispatchEvent: sinon.stub() } },
       };
       formService.render.resolves(form);
       const setEnketoError = sinon.stub(GlobalActions.prototype, 'setEnketoError');
