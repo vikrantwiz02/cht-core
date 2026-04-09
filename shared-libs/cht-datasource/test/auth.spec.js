@@ -261,7 +261,9 @@ describe('CHT Script API - Auth', () => {
       const resultPermissionsNull = auth.hasAnyPermission([ [ 'can_edit' ] ], [ 'chw' ], null);
       const resultPermissionsEmpty = auth.hasAnyPermission([ [ 'can_edit' ] ], [ 'chw' ], {});
       const resultRolesNull = auth.hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
-      const resultRolesEmpty = auth.hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesEmpty = auth.hasAnyPermission(
+        [ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } }
+      );
 
       expect(resultPermissionsNull).to.be.false;
       expect(resultPermissionsEmpty).to.be.false;
