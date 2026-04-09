@@ -16,9 +16,9 @@ const passwords = require('./libs/passwords');
 const chtDatasource = require('@medic/cht-datasource');
 const { Person, Place, Qualifier, Contact } = chtDatasource;
 const { people, places } = require('@medic/contacts')(config, db, dataContext);
-const { USER_ROLES } = require('@medic/constants');
+const { USER_ROLES, PREFIXES } = require('@medic/constants');
 
-const USER_PREFIX = 'org.couchdb.user:';
+const USER_PREFIX = PREFIXES.COUCH_USER;
 
 const PASSWORD_MINIMUM_LENGTH = 8;
 const PASSWORD_MINIMUM_SCORE = 50;
@@ -126,7 +126,7 @@ const getSettingsByIds = async (ids) => {
 };
 
 const getAllUsers = async () => db.users
-  .allDocs({ include_docs: true, start_key: 'org.couchdb.user:', end_key: 'org.couchdb.user:\ufff0' })
+  .allDocs({ include_docs: true, start_key: PREFIXES.COUCH_USER, end_key: PREFIXES.COUCH_USER + '\ufff0' })
   .then(({ rows }) => rows.map(({ doc }) => doc));
 
 const getUsers = async (facilityId, contactId) => {
