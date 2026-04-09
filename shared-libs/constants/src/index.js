@@ -45,6 +45,12 @@ const USER_ROLES = {
 
 const DB_ADMIN_ROLES = [USER_ROLES.ADMIN, USER_ROLES.COUCHDB_ADMIN];
 
+// Prefixes
+const PREFIXES = {
+  COUCH_USER: 'org.couchdb.user:',
+  TRANSLATIONS: 'messages-',
+};
+
 module.exports = {
   DOC_IDS,
   DOC_TYPES,
@@ -53,4 +59,5 @@ module.exports = {
   USER_ROLES,
   DB_ADMIN_ROLES,
   CONTACT_TYPES,
+  PREFIXES,
 };
