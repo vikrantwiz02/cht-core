@@ -43,6 +43,14 @@ updates:
       angular:
         patterns:
         - "angular*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+    commit-message:
+      prefix: "chore"
+
   - package-ecosystem: "npm"
     directory: "/webapp"
     schedule:

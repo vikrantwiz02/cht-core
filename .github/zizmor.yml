@@ -1,0 +1,17 @@
+# zizmor configuration for cht-core
+# https://docs.zizmor.sh/configuration/
+#
+# Only suppress findings that are verified low-risk and cannot be remediated
+# without breaking functionality. All other findings must be fixed in code.
+#
+# To add a new suppression, document the reason and the risk acceptance date.
+
+rules:
+  template-injection:
+    ignore:
+      # release-notes.yml uses workflow_dispatch inputs in env: blocks (lines 37-38).
+      # The actual shell command uses "$MILESTONE" (quoted) and $SKIP_COMMIT_CHECKS
+      # (a constrained `choice` type: either '' or '--skip-commit-validation').
+      # This workflow is internal-only — only org members with Actions write access
+      # can trigger workflow_dispatch. Risk accepted: 2026-04-11.
+      - .github/workflows/release-notes.yml
