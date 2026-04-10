@@ -58,6 +58,7 @@ describe('Deduplicate', () => {
   let service;
   let telemetryService;
   let chtDatasourceService;
+  let getExtensionLib;
   let clock;
 
   beforeEach(() => {
@@ -65,8 +66,9 @@ describe('Deduplicate', () => {
     telemetryService = {
       record: sinon.stub(),
     };
+    getExtensionLib = sinon.stub();
     chtDatasourceService = {
-      getExtensionLib: sinon.stub(),
+      get: sinon.stub().resolves({ v1: { getExtensionLib } }),
     };
     const pipesService: any = {
       getPipeNameVsIsPureMap: sinon.stub().returns(new Map()),
@@ -92,26 +94,26 @@ describe('Deduplicate', () => {
   });
 
   describe('getDuplicates', () => {
-    it('should return duplicates based on default matching', () => {
-      const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS);
+    it('should return duplicates based on default matching', async () => {
+      const results = await service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS);
       expect(results).to.deep.equal([SIBLINGS[1], SIBLINGS[0]]);
       expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2)).to.be.true;
     });
 
-    it('should return duplicates based on default matching with invalid expression', () => {
-      const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { expression: true });
+    it('should return duplicates based on default matching with invalid expression', async () => {
+      const results = await service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { expression: true });
       expect(results).to.deep.equal([SIBLINGS[1], SIBLINGS[0]]);
       expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 2)).to.be.true;
     });
 
-    it('should not return duplicates when the expression is disabled', () => {
-      const results = service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { disabled: true });
+    it('should not return duplicates when the expression is disabled', async () => {
+      const results = await service.getDuplicates(CONTACT, CONTACT_TYPE, SIBLINGS, { disabled: true });
       expect(results).to.be.empty;
       expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 0)).to.be.true;
     });
 
-    it('should return duplicates for custom expression', () => {
-      const results = service.getDuplicates(
+    it('should return duplicates for custom expression', async () => {
+      const results = await service.getDuplicates(
         CONTACT,
         CONTACT_TYPE,
         SIBLINGS,
@@ -121,7 +123,7 @@ describe('Deduplicate', () => {
       expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 1)).to.be.true;
     });
 
-    it('should return duplicates using extensionLib in expression', () => {
+    it('should return duplicates using extensionLib in expression', async () => {
       const dupCheckFn = sinon.stub();
       dupCheckFn.returns(false);
       dupCheckFn.withArgs(
@@ -129,9 +131,9 @@ describe('Deduplicate', () => {
         sinon.match({ name: SIBLINGS[1].name })
       ).returns(true);
 
-      chtDatasourceService.getExtensionLib.withArgs('dupcheck.js').returns(dupCheckFn);
+      getExtensionLib.withArgs('dupcheck.js').returns(dupCheckFn);
 
-      const results = service.getDuplicates(
+      const results = await service.getDuplicates(
         CONTACT,
         CONTACT_TYPE,
         SIBLINGS,
@@ -139,7 +141,7 @@ describe('Deduplicate', () => {
       );
 
       expect(results).to.deep.equal([SIBLINGS[1]]);
-      expect(chtDatasourceService.getExtensionLib.called).to.be.true;
+      expect(getExtensionLib.called).to.be.true;
       expect(dupCheckFn.callCount).to.equal(4);
       expect(telemetryService.record.calledOnceWithExactly('enketo:contacts:some_type:duplicates_found', 1)).to.be.true;
     });

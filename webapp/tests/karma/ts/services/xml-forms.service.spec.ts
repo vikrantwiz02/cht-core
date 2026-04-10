@@ -65,6 +65,7 @@ describe('XmlForms service', () => {
     feedbackService = { submit: sinon.stub() };
     getTypeId = sinon.stub().callsFake(contact => contact.type === 'contact' ? contact.contact_type : contact.type);
     contextUtils = {};
+    contextUtils.get = () => Promise.resolve(contextUtils);
     error = sinon.stub(console, 'error');
     warn = sinon.stub(console, 'warn');
 
