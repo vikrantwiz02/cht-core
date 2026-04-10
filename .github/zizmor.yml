@@ -15,3 +15,30 @@ rules:
       # This workflow is internal-only — only org members with Actions write access
       # can trigger workflow_dispatch. Risk accepted: 2026-04-11.
       - .github/workflows/release-notes.yml
+
+  cache-poisoning:
+    ignore:
+      # release-helm-charts.yml only triggers on `push: tags: v*` — exclusively
+      # maintainers who can push version tags to the repo. No external actor can
+      # trigger this workflow, so cache poisoning via a forked PR is not possible.
+      # Risk accepted: 2026-04-11.
+      - .github/workflows/release-helm-charts.yml
+
+  unpinned-uses:
+    ignore: []
+
+  ref-confusion: {}
+
+  runner-environment:
+    ignore:
+      # release-helm-charts.yml uses softprops/action-gh-release which provides
+      # richer release creation features (draft/prerelease flags, asset management)
+      # beyond what the bundled `gh` CLI offers. The action is SHA-pinned.
+      # Risk accepted: 2026-04-11.
+      - .github/workflows/release-helm-charts.yml
+
+  dependabot-cooldown:
+    config:
+      # Weekly updates (7 days) are acceptable for GitHub Actions — Dependabot
+      # will open PRs for new action versions and they go through normal PR review.
+      min_days: 7
