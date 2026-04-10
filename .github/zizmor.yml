@@ -44,4 +44,4 @@ rules:
       # Weekly updates (7 days) match our existing npm Dependabot schedule and
       # are sufficient — all Dependabot PRs go through normal code review before
       # merging. Risk accepted: 2026-04-11.
-      min_days: 7
+      days: 7
