@@ -38,3 +38,10 @@ rules:
       # (./.github/actions/*) after checkout which require the token to remain
       # available for the duration of the job. Risk accepted: 2026-04-11.
       - .github/workflows/build.yml
+
+  dependabot-cooldown:
+    config:
+      # Weekly updates (7 days) match our existing npm Dependabot schedule and
+      # are sufficient — all Dependabot PRs go through normal code review before
+      # merging. Risk accepted: 2026-04-11.
+      min_days: 7
