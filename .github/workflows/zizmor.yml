@@ -31,11 +31,14 @@ jobs:
         uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8  # v0.5.2
         with:
           online-audits: false
+          config: .github/zizmor.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run zizmor (online — push/schedule)
         if: github.event_name != 'pull_request'
         uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8  # v0.5.2
+        with:
+          config: .github/zizmor.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

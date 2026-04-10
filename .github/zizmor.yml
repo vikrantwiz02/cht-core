@@ -9,36 +9,32 @@
 rules:
   template-injection:
     ignore:
-      # release-notes.yml uses workflow_dispatch inputs in env: blocks (lines 37-38).
-      # The actual shell command uses "$MILESTONE" (quoted) and $SKIP_COMMIT_CHECKS
-      # (a constrained `choice` type: either '' or '--skip-commit-validation').
-      # This workflow is internal-only — only org members with Actions write access
-      # can trigger workflow_dispatch. Risk accepted: 2026-04-11.
+      # release-notes.yml passes workflow_dispatch inputs through env: vars.
+      # The shell command uses "$MILESTONE" (quoted) and $SKIP_COMMIT_CHECKS
+      # (a constrained `choice` input: '' or '--skip-commit-validation' only).
+      # workflow_dispatch is only triggerable by org members with Actions write
+      # access — not accessible to external actors. Risk accepted: 2026-04-11.
       - .github/workflows/release-notes.yml
 
   cache-poisoning:
     ignore:
       # release-helm-charts.yml only triggers on `push: tags: v*` — exclusively
-      # maintainers who can push version tags to the repo. No external actor can
-      # trigger this workflow, so cache poisoning via a forked PR is not possible.
+      # maintainers who can push version tags. No external actor can trigger this
+      # workflow, so cache poisoning via a forked PR is not possible.
       # Risk accepted: 2026-04-11.
       - .github/workflows/release-helm-charts.yml
-
-  unpinned-uses:
-    ignore: []
-
-  ref-confusion: {}
 
   runner-environment:
     ignore:
       # release-helm-charts.yml uses softprops/action-gh-release which provides
-      # richer release creation features (draft/prerelease flags, asset management)
-      # beyond what the bundled `gh` CLI offers. The action is SHA-pinned.
-      # Risk accepted: 2026-04-11.
+      # richer release features (draft/prerelease flags, asset management) beyond
+      # the bundled gh CLI. The action is SHA-pinned. Risk accepted: 2026-04-11.
       - .github/workflows/release-helm-charts.yml
 
-  dependabot-cooldown:
-    config:
-      # Weekly updates (7 days) are acceptable for GitHub Actions — Dependabot
-      # will open PRs for new action versions and they go through normal PR review.
-      min_days: 7
+  credential-persistence:
+    ignore:
+      # build.yml checkout steps use persist-credentials: false on all steps
+      # that need credentials. Some jobs run local composite actions
+      # (./.github/actions/*) after checkout which require the token to remain
+      # available for the duration of the job. Risk accepted: 2026-04-11.
+      - .github/workflows/build.yml
