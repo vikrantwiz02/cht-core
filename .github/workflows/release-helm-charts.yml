@@ -62,6 +62,7 @@ jobs:
           retention-days: 30
 
       - name: Attach Helm Chart to Release
-        run: gh release upload "${{ github.ref_name }}" release-assets/* --clobber
+        run: gh release upload "$TAG_NAME" release-assets/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
