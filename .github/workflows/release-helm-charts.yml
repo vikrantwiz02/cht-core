@@ -62,8 +62,6 @@ jobs:
           retention-days: 30
 
       - name: Attach Helm Chart to Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe  # v2 # zizmor: ignore[runner-environment]
-        with:
-          files: release-assets/*
+        run: gh release upload "${{ github.ref_name }}" release-assets/* --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

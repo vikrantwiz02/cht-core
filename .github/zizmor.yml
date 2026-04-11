@@ -24,12 +24,6 @@ rules:
       # Risk accepted: 2026-04-11.
       - .github/workflows/release-helm-charts.yml
 
-  runner-environment:
-    ignore:
-      # release-helm-charts.yml uses softprops/action-gh-release which provides
-      # richer release features (draft/prerelease flags, asset management) beyond
-      # the bundled gh CLI. The action is SHA-pinned. Risk accepted: 2026-04-11.
-      - .github/workflows/release-helm-charts.yml
 
   credential-persistence:
     ignore:
