@@ -25,17 +25,16 @@ const get = (path, headers) => {
   });
 };
 
-const getSettings = () => ({ permissions: config.get('permissions'), roles: config.get('roles') });
-
 const assertPermissions = async (req, { isOnline = false, hasAll = [], hasAny = [] }) => {
+  const settings = config.getAll();
   const userCtx = await module.exports.getUserCtx(req);
   const onlineUserPass = isOnline === false || roles.isOnlineOnly(userCtx);
   const isAdmin = roles.isDbAdmin(userCtx);
   const datasource = getDatasource(dataContext);
   const hasAllPass = hasAll.length === 0 || isAdmin
-    || datasource.v1.hasPermissions(hasAll, userCtx.roles, getSettings());
+    || datasource.v1.hasPermissions(hasAll, userCtx.roles, settings);
   const hasAnyPass = hasAny.length === 0 || isAdmin
-    || datasource.v1.hasAnyPermission(hasAny.map(perm => [perm]), userCtx.roles, getSettings());
+    || datasource.v1.hasAnyPermission(hasAny.map(perm => [perm]), userCtx.roles, settings);
   if (!(onlineUserPass && hasAllPass && hasAnyPass)) {
     throw new PermissionError('Insufficient privileges');
   }
@@ -53,7 +52,7 @@ module.exports = {
     if (!permissions || !userCtx || !userCtx.roles) {
       return false;
     }
-    return getDatasource(dataContext).v1.hasPermissions(permissions, userCtx.roles, getSettings());
+    return getDatasource(dataContext).v1.hasPermissions(permissions, userCtx.roles, config.getAll());
   },
   getUserCtx: req => {
     return get('/_session', req.headers)

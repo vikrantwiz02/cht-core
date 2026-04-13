@@ -1,11 +1,16 @@
 const expect = require('chai').expect;
 const auth = require('../src/auth');
+const { DB_ADMIN_ROLES } = require('@medic/constants');
 
 describe('CHT Script API - Auth', () => {
   describe('hasPermissions', () => {
     it('should return false when no roles and no permissions configured in CHT-Core settings', () => {
-      const resultPermissionsNull = auth.hasPermissions('can_edit', [ 'chw' ], null);
-      const resultPermissionsEmpty = auth.hasPermissions('can_edit', [ 'chw' ], {});
+      const resultPermissionsNull = auth.hasPermissions(
+        'can_edit', [ 'chw' ], { permissions: null, rolls: { chw: { } } }
+      );
+      const resultPermissionsEmpty = auth.hasPermissions(
+        'can_edit', [ 'chw' ], { permissions: { }, roles: { chw: { } } }
+      );
       const resultRolesNull = auth.hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
       const resultRolesEmpty = auth.hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
 
@@ -16,7 +21,7 @@ describe('CHT Script API - Auth', () => {
     });
 
     it('should return false when permissions parameter is empty', () => {
-      const settings = { permissions: { can_edit: [ 'chw' ] } };
+      const settings = { permissions: { can_edit: [ 'chw' ] }, roles: { chw: { } } };
       const resultNoPermissions = auth.hasPermissions(null, [ 'chw' ], settings);
       const resultEmptyString = auth.hasPermissions('', [ 'chw' ], settings);
       const resultEmptyArray = auth.hasPermissions([], [ 'chw' ], settings);
@@ -32,7 +37,7 @@ describe('CHT Script API - Auth', () => {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ]
         },
-        roles: { chw_supervisor: { name: 'chw_supervisor' }, nurse: { name: 'nurse' } }
+        roles: { chw_supervisor: { name: 'chw_supervisor' }, gateway: { name: 'gateway' } }
       };
       const userRoles = [ 'chw_supervisor', 'gateway' ];
 
@@ -47,7 +52,7 @@ describe('CHT Script API - Auth', () => {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ]
         },
-        roles: { chw_supervisor: { name: 'chw_supervisor' }, nurse: { name: 'nurse' } }
+        roles: { chw_supervisor: { name: 'chw_supervisor' }, gateway: { name: 'gateway' } }
       };
       const userRoles = [ 'chw_supervisor', 'gateway' ];
 
@@ -56,18 +61,19 @@ describe('CHT Script API - Auth', () => {
       expect(result).to.be.false;
     });
 
-    it('should return true when user is admin', () => {
-      const settings = {
-        permissions: {
-          can_edit: [ 'chw_supervisor' ],
-          can_configure: [ 'nurse' ]
-        }
-      };
-      const userRoles = [ '_admin' ];
+    DB_ADMIN_ROLES.forEach(adminRole => {
+      it('should return true when user is admin', () => {
+        const settings = {
+          permissions: {
+            can_edit: [ 'chw_supervisor' ],
+            can_configure: [ 'nurse' ]
+          }
+        };
 
-      const result = auth.hasPermissions('can_create_people', userRoles, settings);
+        const result = auth.hasPermissions('can_create_people', [adminRole], settings);
 
-      expect(result).to.be.true;
+        expect(result).to.be.true;
+      });
     });
 
     it('should return false when settings doesnt have roles assigned for the permission', () => {
@@ -167,17 +173,19 @@ describe('CHT Script API - Auth', () => {
       expect(result).to.be.true;
     });
 
-    it('should return false when user is admin and has disallowed permission', () => {
-      const settings = {
-        permissions: {
-          can_backup_facilities: [ 'analytics' ],
-          can_export_messages: [ 'national_admin' ]
-        }
-      };
+    DB_ADMIN_ROLES.forEach(adminRole => {
+      it('should return false when user is admin and has disallowed permission', () => {
+        const settings = {
+          permissions: {
+            can_backup_facilities: [ 'analytics' ],
+            can_export_messages: [ 'national_admin' ]
+          }
+        };
 
-      const result = auth.hasPermissions([ '!can_backup_facilities' ], [ '_admin' ], settings);
+        const result = auth.hasPermissions([ '!can_backup_facilities' ], [adminRole], settings);
 
-      expect(result).to.be.false;
+        expect(result).to.be.false;
+      });
     });
 
     it('should return false when user has one of disallowed permission', () => {
@@ -242,39 +250,35 @@ describe('CHT Script API - Auth', () => {
       expect(result).to.be.true;
     });
 
-    it('should return false when no roles are configured and user is not admin', () => {
-      const settings = {
-        permissions: { can_edit: [ 'chw_supervisor' ] },
-        roles: {}
-      };
-      const userRoles = [ 'chw_supervisor' ];
+    [
+      {},
+      undefined
+    ].forEach(roles => {
+      it('should return false when no roles are configured and user is not admin', () => {
+        const settings = {
+          permissions: { can_edit: [ 'chw_supervisor' ] },
+          roles
+        };
+        const userRoles = [ 'chw_supervisor' ];
 
-      // Restrictive: when no roles configured, non-admin users get no permissions
-      const result = auth.hasPermissions('can_edit', userRoles, settings);
+        // Restrictive: when no roles configured, non-admin users get no permissions
+        const result = auth.hasPermissions('can_edit', userRoles, settings);
 
-      expect(result).to.be.false;
-    });
-
-    it('should not filter roles when settings.roles is absent (backward compatibility)', () => {
-      const settings = {
-        permissions: { can_edit: [ 'chw_supervisor' ] }
-      };
-      const userRoles = [ 'chw_supervisor' ];
-
-      const result = auth.hasPermissions('can_edit', userRoles, settings);
-
-      expect(result).to.be.true;
+        expect(result).to.be.false;
+      });
     });
   });
 
   describe('hasAnyPermission', () => {
     it('should return false when no roles and no permissions configured in CHT-Core settings', () => {
-      const resultPermissionsNull = auth.hasAnyPermission([ [ 'can_edit' ] ], [ 'chw' ], null);
-      const resultPermissionsEmpty = auth.hasAnyPermission([ [ 'can_edit' ] ], [ 'chw' ], {});
-      const resultRolesNull = auth.hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
-      const resultRolesEmpty = auth.hasAnyPermission(
-        [ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } }
+      const resultPermissionsNull = auth.hasAnyPermission(
+        [ [ 'can_edit' ] ], [ 'chw' ], { permissions: null, roles: { chw: { } } }
       );
+      const resultPermissionsEmpty = auth.hasAnyPermission(
+        [ [ 'can_edit' ] ], [ 'chw' ], { permissions: {}, roles: { chw: { } } }
+      );
+      const resultRolesNull = auth.hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesEmpty = auth.hasAnyPermission([ [ 'can_edit' ] ], [], { permissions: { can_edit: [ 'chw' ] } });
 
       expect(resultPermissionsNull).to.be.false;
       expect(resultPermissionsEmpty).to.be.false;
@@ -283,7 +287,7 @@ describe('CHT Script API - Auth', () => {
     });
 
     it('should return false when permissionsGroupList parameter is empty', () => {
-      const settings = { permissions: { can_edit: [ 'chw' ] } };
+      const settings = { permissions: { can_edit: [ 'chw' ] }, roles: { chw: { } } };
       const resultNoPermissions = auth.hasAnyPermission(null, [ 'chw' ], settings);
       const resultEmptyArray = auth.hasAnyPermission([], [ 'chw' ], settings);
       const resultListWrongType = auth.hasAnyPermission('can_edit', [ 'chw' ], settings);
@@ -295,58 +299,60 @@ describe('CHT Script API - Auth', () => {
       expect(resultGroupWrongType).to.be.false;
     });
 
-    it('should return true when user is admin and doesnt have disallowed permissions', () => {
-      const settings = {
-        permissions: {
-          can_backup_facilities: [ 'national_admin', 'district_admin' ],
-          can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
-          some_permission: [ 'national_admin', 'district_admin' ]
-        }
-      };
+    DB_ADMIN_ROLES.forEach(adminRole => {
+      it('should return true when user is admin and doesnt have disallowed permissions', () => {
+        const settings = {
+          permissions: {
+            can_backup_facilities: [ 'national_admin', 'district_admin' ],
+            can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
+            some_permission: [ 'national_admin', 'district_admin' ]
+          }
+        };
 
-      const result = auth.hasAnyPermission(
-        [[ 'can_backup_facilities' ], [ 'can_export_messages' ], [ 'some_permission' ]],
-        [ '_admin' ],
-        settings
-      );
+        const result = auth.hasAnyPermission(
+          [[ 'can_backup_facilities' ], [ 'can_export_messages' ], [ 'some_permission' ]],
+          [adminRole],
+          settings
+        );
 
-      expect(result).to.be.true;
-    });
+        expect(result).to.be.true;
+      });
 
-    it('should return true when user is admin and has some disallowed permissions', () => {
-      const settings = {
-        permissions: {
-          can_backup_facilities: [ 'national_admin', 'district_admin' ],
-          can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
-          some_permission: [ 'national_admin', 'district_admin' ]
-        }
-      };
+      it('should return true when user is admin and has some disallowed permissions', () => {
+        const settings = {
+          permissions: {
+            can_backup_facilities: [ 'national_admin', 'district_admin' ],
+            can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
+            some_permission: [ 'national_admin', 'district_admin' ]
+          }
+        };
 
-      const result = auth.hasAnyPermission(
-        [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ 'some_permission' ]],
-        [ '_admin' ],
-        settings
-      );
+        const result = auth.hasAnyPermission(
+          [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ 'some_permission' ]],
+          [adminRole],
+          settings
+        );
 
-      expect(result).to.be.true;
-    });
+        expect(result).to.be.true;
+      });
 
-    it('should return false when user is admin and has all disallowed permissions', () => {
-      const settings = {
-        permissions: {
-          can_backup_facilities: [ 'national_admin', 'district_admin' ],
-          can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
-          some_permission: [ 'national_admin', 'district_admin' ]
-        }
-      };
+      it('should return false when user is admin and has all disallowed permissions', () => {
+        const settings = {
+          permissions: {
+            can_backup_facilities: [ 'national_admin', 'district_admin' ],
+            can_export_messages: [ 'national_admin', 'district_admin', 'analytics' ],
+            some_permission: [ 'national_admin', 'district_admin' ]
+          }
+        };
 
-      const result = auth.hasAnyPermission(
-        [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ '!some_permission' ]],
-        [ '_admin' ],
-        settings
-      );
+        const result = auth.hasAnyPermission(
+          [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ '!some_permission' ]],
+          [adminRole],
+          settings
+        );
 
-      expect(result).to.be.false;
+        expect(result).to.be.false;
+      });
     });
 
     it('should return true when user has all permissions', () => {
@@ -521,18 +527,6 @@ describe('CHT Script API - Auth', () => {
       };
       // User has 'chw_supervisor' (deleted) and 'chw' (configured), 'chw' grants can_view
       const userRoles = [ 'chw_supervisor', 'chw' ];
-
-      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
-
-      expect(result).to.be.true;
-    });
-
-    it('should not filter roles when settings.roles is absent (backward compatibility)', () => {
-      const settings = {
-        permissions: { can_edit: [ 'chw_supervisor' ], can_view: [ 'chw_supervisor' ] }
-        // No roles key — older app_settings format
-      };
-      const userRoles = [ 'chw_supervisor' ];
 
       const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
 

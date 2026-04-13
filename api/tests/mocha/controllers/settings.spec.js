@@ -103,6 +103,12 @@ describe('Settings controller', () => {
         chai.expect(settingsService.update.callCount).to.equal(0);
         chai.expect(res.json.callCount).to.equal(0);
         chai.expect(serverUtils.error.callCount).to.equal(1);
+        chai.expect(serverUtils.error.args[0]).to.deep.equal([
+          new PermissionError('Insufficient privileges'),
+          req,
+          res,
+          true
+        ]);
       });
     });
 

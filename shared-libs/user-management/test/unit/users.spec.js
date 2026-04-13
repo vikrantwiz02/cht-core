@@ -14,8 +14,7 @@ const facility = require('../../src/libs/facility');
 const lineage = require('../../src/libs/lineage');
 const passwords = require('../../src/libs/passwords');
 const roles = require('../../src/roles');
-const chtDatasource = require('@medic/cht-datasource');
-const { Person, Place, Qualifier, Contact } = chtDatasource;
+const { Person, Place, Qualifier, Contact } = require('@medic/cht-datasource');
 const { people, places }  = require('@medic/contacts')(config, db, dataContext);
 const COMPLEX_PASSWORD = '23l4ijk3nSDELKSFnwekirh';
 
@@ -28,6 +27,7 @@ const contactMilan = {
   type: 'person',
   name: 'milan',
 };
+const SETTINGS = { hello: 'world' };
 
 let userData;
 let clock;
@@ -35,6 +35,7 @@ let addMessage;
 let getPerson;
 let getPlace;
 let getContact;
+let hasPermissions;
 const oneDayInMS = 24 * 60 * 60 * 1000;
 
 let service;
@@ -43,6 +44,7 @@ describe('Users service', () => {
   beforeEach(() => {
     config.init({
       get: sinon.stub(),
+      getAll: sinon.stub().returns(SETTINGS),
       getTransitionsLib: sinon.stub(),
     });
     db.init({
@@ -84,6 +86,8 @@ describe('Users service', () => {
     };
     config.get.withArgs('roles').returns({ 'national-manager': { offline: true } });
     clock = sinon.useFakeTimers();
+    hasPermissions = sinon.stub();
+    service.__set__('getDatasource', sinon.stub().returns({ v1: { hasPermissions }}));
   });
 
   afterEach(() => {
@@ -1346,6 +1350,7 @@ describe('Users service', () => {
   });
 
   describe('createUser', () => {
+
     it('should set password_change_required to true for new user creation', () => {
       const data = {
         username: 'newuser',
@@ -1361,7 +1366,7 @@ describe('Users service', () => {
       service.__set__('createContact', sinon.stub().resolves());
       service.__set__('storeUpdatedPlace', sinon.stub().resolves());
       service.__set__('createUserSettings', sinon.stub().resolves());
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
 
       couchSettings.getCouchConfig.resolves({
         admin1: 'password_1',
@@ -1694,7 +1699,7 @@ describe('Users service', () => {
         .withArgs('app_url').returns('http://realhost');
 
       sinon.stub(roles, 'isOffline').returns(false);
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
 
       const users = [{
         username: 'sally',
@@ -2051,7 +2056,7 @@ describe('Users service', () => {
       const usersPut = db.users.put;
       service.__set__('validateNewUsername', sinon.stub().resolves());
       service.__set__('storeUpdatedPlace', sinon.stub().resolves());
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       sinon.stub(places, 'getPlace').resolves({ _id: 'foo' });
       getContact.withArgs(Qualifier.byUuid('user1'))
         .onFirstCall().resolves(null)
@@ -2275,7 +2280,7 @@ describe('Users service', () => {
 
     it('returns error if has multiple facilities but does not have role', async () => {
       service.__set__('validateNewUsername', sinon.stub().resolves());
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
 
       const data = {
         username: 'x',
@@ -2288,15 +2293,17 @@ describe('Users service', () => {
       await chai.expect(service.createMultiFacilityUser(data)).to.be.eventually.rejectedWith(Error)
         .and.have.property('code', 400);
 
-      chai.expect(chtDatasource.hasPermissions.calledOnce).to.be.true;
-      chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_have_multiple_places']);
-      chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(['a', 'b']);
+      chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
+        ['can_have_multiple_places'],
+        ['a', 'b'],
+        SETTINGS
+      );
     });
 
     it('returns error if place lookup fails', async () => {
       service.__set__('validateNewUsername', sinon.stub().resolves());
       sinon.stub(places, 'placesExist').rejects(new Error('missing'));
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
 
       const data = {
         username: 'x',
@@ -2314,7 +2321,7 @@ describe('Users service', () => {
     it('returns error if places lookup fails', async () => {
       service.__set__('validateNewUsername', sinon.stub().resolves());
       sinon.stub(places, 'placesExist').rejects(new Error('missing'));
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
 
       const data = {
         username: 'x',
@@ -2331,7 +2338,7 @@ describe('Users service', () => {
     it('returns error if contact is not within place', async () => {
       service.__set__('validateNewUsername', sinon.stub().resolves());
       sinon.stub(places, 'placesExist').resolves();
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
       const data = {
         username: 'x',
         place: ['x', 'y', 'z'],
@@ -2386,7 +2393,7 @@ describe('Users service', () => {
       sinon.stub(people, 'isAPerson').returns(true);
       db.medic.put.resolves({ id: 'success' });
       db.users.put.resolves({ id: 'success' });
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
 
       const userData = {
         username: 'x',
@@ -2421,16 +2428,15 @@ describe('Users service', () => {
         password: 'password.123',
         password_change_required: false
       }]]);
-      chai.expect(chtDatasource.hasPermissions.callCount).to.equal(2);
-      chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_have_multiple_places']);
-      chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(['national-manager']);
-      chai.expect(chtDatasource.hasPermissions.args[1][0]).to.deep.equal(['can_skip_password_change']);
-      chai.expect(chtDatasource.hasPermissions.args[1][1]).to.deep.equal(['national-manager']);
+      chai.expect(hasPermissions.args).to.deep.equal([
+        [['can_have_multiple_places'], ['national-manager'], SETTINGS],
+        [['can_skip_password_change'], ['national-manager'], SETTINGS],
+      ]);
     });
 
     it('succeeds without permission for single facility', async () => {
       service.__set__('validateNewUsername', sinon.stub().resolves());
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       sinon.stub(places, 'placesExist').resolves();
       sinon.stub(people, 'isAPerson').returns(true);
       db.medic.put.resolves({ id: 'success' });
@@ -2913,7 +2919,7 @@ describe('Users service', () => {
       db.medic.get.resolves(user);
       db.users.get.resolves(user);
       sinon.stub(places, 'placesExist').resolves();
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
       db.medic.put.resolves({});
       db.users.put.resolves({});
       return service.updateUser('paul', data, true).then(() => {
@@ -3024,7 +3030,7 @@ describe('Users service', () => {
       db.users.get.resolves({ facility_id: 'maine', contact_id: 'june' });
       db.medic.get.resolves({ facility_id: 'maine', contact_id: 'june' });
       sinon.stub(places, 'placesExist').resolves();
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
       db.medic.put.resolves({});
       db.users.put.resolves({});
       return service.updateUser('paul', data, true).then(() => {
@@ -3049,7 +3055,7 @@ describe('Users service', () => {
       });
       sinon.stub(people, 'isAPerson').returns(true);
 
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
 
       db.medic.put.resolves({});
       db.users.put.resolves({});
@@ -3112,7 +3118,7 @@ describe('Users service', () => {
       db.medic.put.resolves({});
       db.users.put.resolves({});
       sinon.stub(roles, 'isOffline').withArgs(['rambler']).returns(false);
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       return service.updateUser('paul', data, true).then(() => {
         chai.expect(db.medic.put.callCount).to.equal(1);
         const settings = db.medic.put.args[0][0];
@@ -3335,7 +3341,7 @@ describe('Users service', () => {
 
     it('should set password_change_required to true when admin updates user password', async () => {
       const data = { password: COMPLEX_PASSWORD };
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       couchSettings.getCouchConfig.resolves({
         admin1: 'password_1',
         admin2: 'password_2',
@@ -3572,7 +3578,7 @@ describe('Users service', () => {
         .withArgs('app_url').returns('http://realhost');
 
       sinon.stub(roles, 'isOffline').returns(false);
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
 
       const user = {
         username: 'sally',
@@ -3928,7 +3934,7 @@ describe('Users service', () => {
   describe('resetPassword', () => {
     it('should reset password for valid user', async () => {
       const expectedPassword = 'newpassword';
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       sinon
         .stub(passwords, 'generate')
         .returns(expectedPassword);
@@ -3951,7 +3957,7 @@ describe('Users service', () => {
 
     it('should throw for admin user', async () => {
       const expectedPassword = 'newpassword';
-      sinon.stub(chtDatasource, 'hasPermissions').returns(false);
+      hasPermissions.returns(false);
       sinon
         .stub(passwords, 'generate')
         .returns(expectedPassword);
@@ -4308,7 +4314,7 @@ describe('Users service', () => {
         .stub(ssoLogin, 'validateSsoLogin');
       service.__set__('validateNewUsername', sinon.stub().resolves());
       sinon.stub(people, 'isAPerson').returns(true);
-      sinon.stub(chtDatasource, 'hasPermissions').returns(true);
+      hasPermissions.returns(true);
       db.medic.put.resolves({ id: 'success' });
       db.users.put.resolves({ id: 'success' });
       getContact.withArgs(Qualifier.byUuid('h')).resolves(userContact);
@@ -4336,7 +4342,7 @@ describe('Users service', () => {
         chai.expect(db.users.put.notCalled).to.be.true;
         chai.expect(service.__get__('validateNewUsername').notCalled).to.be.true;
         chai.expect(people.isAPerson.notCalled).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.notCalled).to.be.true;
+        chai.expect(hasPermissions.notCalled).to.be.true;
       });
 
       it('succeeds if oidc validation passes', async () => {
@@ -4371,11 +4377,10 @@ describe('Users service', () => {
         chai.expect(service.__get__('validateNewUsername').calledOnceWithExactly(ssoUserData.username)).to.be.true;
         chai.expect(places.placesExist.calledOnceWithExactly(ssoUserData.place)).to.be.true;
         chai.expect(people.isAPerson.args).to.deep.equal([[userContact], [userContact], [userContact]]);
-        chai.expect(chtDatasource.hasPermissions.callCount).to.equal(2);
-        chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_have_multiple_places']);
-        chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(ssoUserData.roles);
-        chai.expect(chtDatasource.hasPermissions.args[1][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[1][1]).to.deep.equal(ssoUserData.roles);
+        chai.expect(hasPermissions.args).to.deep.equal([
+          [['can_have_multiple_places'], ssoUserData.roles, SETTINGS],
+          [['can_skip_password_change'], ssoUserData.roles, SETTINGS],
+        ]);
       });
     });
 
@@ -4401,7 +4406,7 @@ describe('Users service', () => {
         chai.expect(db.users.put.notCalled).to.be.true;
         chai.expect(service.__get__('validateNewUsername').notCalled).to.be.true;
         chai.expect(people.isAPerson.notCalled).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.notCalled).to.be.true;
+        chai.expect(hasPermissions.notCalled).to.be.true;
       });
 
       it('succeeds if oidc validation passes', async () => {
@@ -4440,9 +4445,9 @@ describe('Users service', () => {
         chai.expect(people.getOrCreatePerson.calledOnceWithExactly(expectedUser.contact_id)).to.be.true;
         chai.expect(service.__get__('validateNewUsername').calledOnceWithExactly(expectedUser.name)).to.be.true;
         chai.expect(people.isAPerson.calledOnceWithExactly(userContact)).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.calledOnce).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(expectedUser.roles);
+        chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
+          ['can_skip_password_change'], expectedUser.roles, SETTINGS
+        );
       });
     });
 
@@ -4476,7 +4481,7 @@ describe('Users service', () => {
         chai.expect(db.users.put.notCalled).to.be.true;
         chai.expect(service.__get__('validateNewUsername').notCalled).to.be.true;
         chai.expect(people.isAPerson.notCalled).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.notCalled).to.be.true;
+        chai.expect(hasPermissions.notCalled).to.be.true;
       });
 
       it('returns error if oidc validation fails for some users', async () => {
@@ -4533,9 +4538,9 @@ describe('Users service', () => {
         chai.expect(people.getOrCreatePerson.calledOnceWithExactly(expectedUser1.contact_id)).to.be.true;
         chai.expect(service.__get__('validateNewUsername').calledOnceWithExactly(expectedUser1.name)).to.be.true;
         chai.expect(people.isAPerson.calledOnceWithExactly(userContact)).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.calledOnce).to.be.true;
-        chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(expectedUser1.roles);
+        chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
+          ['can_skip_password_change'], expectedUser1.roles, SETTINGS
+        );
       });
 
       it('succeeds if oidc validation passes', async () => {
@@ -4636,13 +4641,11 @@ describe('Users service', () => {
           [userContact],
           [userContact]
         ]);
-        chai.expect(chtDatasource.hasPermissions.callCount).to.equal(3);
-        chai.expect(chtDatasource.hasPermissions.args[0][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[0][1]).to.deep.equal(expectedUser.roles);
-        chai.expect(chtDatasource.hasPermissions.args[1][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[1][1]).to.deep.equal(expectedUser1.roles);
-        chai.expect(chtDatasource.hasPermissions.args[2][0]).to.deep.equal(['can_skip_password_change']);
-        chai.expect(chtDatasource.hasPermissions.args[2][1]).to.deep.equal(expectedUser2.roles);
+        chai.expect(hasPermissions.args).to.deep.equal([
+          [['can_skip_password_change'], expectedUser.roles, SETTINGS],
+          [['can_skip_password_change'], expectedUser1.roles, SETTINGS],
+          [['can_skip_password_change'], expectedUser2.roles, SETTINGS],
+        ]);
       });
     });
 

@@ -130,12 +130,4 @@ describe('roles', () => {
       chai.expect(roles.isOffline(['someRole'])).to.equal(true);
     });
   });
-
-  // hasAllPermissions has been removed from roles.js — permission checking is
-  // now centralised in cht-datasource. Tests live in cht-datasource/test/auth.spec.js.
-  describe('hasAllPermissions', () => {
-    it('should not be exported', () => {
-      chai.expect(roles.hasAllPermissions).to.be.undefined;
-    });
-  });
 });

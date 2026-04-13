@@ -84,6 +84,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { district_admin: {} }
       });
 
       const result = await service.has(['']);
@@ -106,6 +107,7 @@ describe('Auth service', function() {
               'analytics',
             ],
           },
+          roles: { district_admin: {} }
         });
         const result = await service.has(['xyz']);
         chai.expect(result).to.be.false;
@@ -122,6 +124,7 @@ describe('Auth service', function() {
               'analytics',
             ],
           },
+          roles: { district_admin: {} }
         });
         const result = await service.has(['!xyz']);
         chai.expect(result).to.be.true;
@@ -140,6 +143,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { district_admin: {} }
       });
       const result = await service.has('can_backup_facilities');
       chai.expect(result).to.be.false;
@@ -156,6 +160,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { district_admin: {} }
       });
       const result = await service.has(['can_backup_facilities', 'can_export_messages']);
       chai.expect(result).to.be.false;
@@ -172,6 +177,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { national_admin: {} }
       });
       const result = await service.has(['can_backup_facilities', 'can_export_messages']);
       chai.expect(result).to.be.true;
@@ -195,6 +201,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { analytics: {} }
       });
 
       const result = await service.has(['!can_backup_facilities', '!can_export_messages']);
@@ -212,6 +219,7 @@ describe('Auth service', function() {
             'analytics',
           ],
         },
+        roles: { analytics: {} }
       });
 
       const result = await service.has(['!can_backup_facilities', 'can_export_messages']);
@@ -282,6 +290,7 @@ describe('Auth service', function() {
           can_add_places: ['national_admin', 'district_admin'],
           can_roll_over: ['national_admin', 'district_admin'],
         },
+        roles: { district_admin: {} }
       });
       const permissions = [
         ['can_backup_facilities'],
@@ -299,6 +308,7 @@ describe('Auth service', function() {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_backup_people: ['national_admin', 'district_admin'],
         },
+        roles: { district_admin: {} }
       });
 
       const permissions = [
@@ -317,6 +327,7 @@ describe('Auth service', function() {
           can_backup_facilities: ['national_admin'],
           can_backup_people: ['national_admin'],
         },
+        roles: { district_admin: {} }
       });
       const permissions = [
         ['can_backup_facilities', 'can_backup_people'],
@@ -342,6 +353,7 @@ describe('Auth service', function() {
           random2: ['national_admin'],
           random3: ['national_admin'],
         },
+        roles: { district_admin: {} }
       });
 
       const result = await service.any([
@@ -363,6 +375,7 @@ describe('Auth service', function() {
           random1: ['national_admin'],
           random3: ['national_admin'],
         },
+        roles: { district_admin: {} }
       });
       const result = await service.any([
         ['can_backup_facilities', '!can_add_people'],
@@ -383,6 +396,7 @@ describe('Auth service', function() {
           random2: ['national_admin', 'district_admin'],
           random3: ['national_admin', 'district_admin'],
         },
+        roles: { district_admin: {} }
       });
 
       const result = await service.any([

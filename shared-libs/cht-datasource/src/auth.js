@@ -46,10 +46,7 @@ const checkUserHasPermissions = (permissions, userRoles, chtPermissionsSettings,
   });
 };
 
-const filterRolesByConfigured = (userRoles, chtRolesSettings) => {
-  if (chtRolesSettings === undefined || chtRolesSettings === null) {
-    return userRoles;
-  }
+const filterRolesByConfigured = (userRoles, chtRolesSettings = {}) => {
   const availableRoles = new Set([...DB_ADMIN_ROLES, ...Object.keys(chtRolesSettings)]);
   return userRoles.filter(role => availableRoles.has(role));
 };
@@ -98,8 +95,8 @@ const checkAdminPermissions = (disallowedGroupList, permissions, userRoles) => {
  */
 const hasPermissions = (permissions, userRoles, settings) => {
   permissions = normalizePermissions(permissions);
-  const chtPermissionsSettings = settings?.permissions;
-  const chtRolesSettings = settings?.roles;
+  const chtPermissionsSettings = settings.permissions;
+  const chtRolesSettings = settings.roles;
 
   if (!verifyParameters(permissions, userRoles, chtPermissionsSettings)) {
     return false;
@@ -136,7 +133,9 @@ const hasPermissions = (permissions, userRoles, settings) => {
  * @return {boolean}
  */
 const hasAnyPermission = (permissionsGroupList, userRoles, settings) => {
-  if (!verifyParameters(permissionsGroupList, userRoles, settings?.permissions)) {
+  const chtPermissionsSettings = settings.permissions;
+  const chtRolesSettings = settings.roles;
+  if (!verifyParameters(permissionsGroupList, userRoles, chtPermissionsSettings)) {
     return false;
   }
 
@@ -145,9 +144,6 @@ const hasAnyPermission = (permissionsGroupList, userRoles, settings) => {
     debug('Permission groups to verify are invalid');
     return false;
   }
-
-  const chtPermissionsSettings = settings?.permissions;
-  const chtRolesSettings = settings?.roles;
 
   const allowedGroupList = [];
   const disallowedGroupList = [];
