@@ -52,6 +52,7 @@ import { SidebarMenuComponent } from '@mm-components/sidebar-menu/sidebar-menu.c
 import { ReloadingComponent } from '@mm-modals/reloading/reloading.component';
 import { StorageInfoService } from '@mm-services/storage-info.service';
 import { TasksNotificationService } from '@mm-services/task-notifications.service';
+import { UiExtensionsService } from '@mm-services/ui-extensions.service';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -95,6 +96,7 @@ describe('AppComponent', () => {
   let updateServiceWorkerService;
   let storageInfoService;
   let tasksNotificationService;
+  let uiExtensionsService;
   // End Services
 
   let globalActions;
@@ -196,6 +198,7 @@ describe('AppComponent', () => {
     };
     formService = { setUserContext: sinon.stub() };
     updateServiceWorkerService = { update: sinon.stub() };
+    uiExtensionsService = { getPropertiesByType: sinon.stub().resolves([]) };
     consoleErrorStub = sinon.stub(console, 'error');
 
     const mockedSelectors = [
@@ -251,6 +254,7 @@ describe('AppComponent', () => {
           { provide: StorageInfoService, useValue: storageInfoService },
           { provide: Router, useValue: router },
           { provide: TasksNotificationService, useValue: tasksNotificationService },
+          { provide: UiExtensionsService, useValue: uiExtensionsService },
         ]
       })
       .overrideComponent(SidebarMenuComponent, {
