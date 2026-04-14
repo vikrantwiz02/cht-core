@@ -349,7 +349,12 @@ jobs:
 
     - name: Scan logs for security issues
       if: always()
-      run: node scripts/ci/log-scanner.js tests/logs/
+      run: |
+        if [[ "${{ matrix.cmd }}" == ci-webdriver* || "${{ matrix.cmd }}" == wdio* ]]; then
+          node scripts/ci/log-scanner.js tests/logs/ --scan-errors
+        else
+          node scripts/ci/log-scanner.js tests/logs/
+        fi
 
     - name: Archive Results
       uses: actions/upload-artifact@v4
