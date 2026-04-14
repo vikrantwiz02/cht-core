@@ -325,7 +325,8 @@ describe('CHTScriptApiService service', () => {
         permissions: {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ]
-        }
+        },
+        roles: { nurse: {} }
       });
       sessionService.userCtx.returns({ roles: [ 'nurse' ] });
       await service.isInitialized();
@@ -339,7 +340,8 @@ describe('CHTScriptApiService service', () => {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ],
           can_create_people: [ 'chw_supervisor', 'nurse' ]
-        }
+        },
+        roles: { nurse: {} }
       });
       sinon.resetHistory();
       changesCallback();
@@ -435,7 +437,8 @@ describe('CHTScriptApiService service', () => {
         permissions: {
           can_edit: [ 'chw_supervisor', 'nurse' ],
           can_configure: [ 'nurse' ]
-        }
+        },
+        roles: { nurse: {} }
       });
       sessionService.userCtx.returns({ roles: [ 'nurse' ] });
       await service.isInitialized();
@@ -449,7 +452,8 @@ describe('CHTScriptApiService service', () => {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ],
           can_create_people: [ 'chw_supervisor', 'nurse' ]
-        }
+        },
+        roles: { nurse: {} }
       });
       sinon.resetHistory();
       changesCallback();
