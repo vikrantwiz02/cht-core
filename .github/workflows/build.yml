@@ -203,6 +203,9 @@ jobs:
       - uses: azure/setup-kubectl@v4
       - name: Run tests
         run: npm run ${{ matrix.cmd }}
+      - name: Scan logs for security issues
+        if: always()
+        run: node scripts/ci/log-scanner.js tests/logs/
       - name: Archive Results
         uses: actions/upload-artifact@v4
         with:
@@ -343,6 +346,10 @@ jobs:
         npm install chromedriver@^107.0.3
     - name: Run tests ${{ matrix.cmd }}-${{ matrix.suite }} on Chrome ${{ matrix.chrome-version }}
       run: npm run ${{ matrix.cmd }} -- --suite=${{ matrix.suite }}
+
+    - name: Scan logs for security issues
+      if: always()
+      run: node scripts/ci/log-scanner.js tests/logs/
 
     - name: Archive Results
       uses: actions/upload-artifact@v4

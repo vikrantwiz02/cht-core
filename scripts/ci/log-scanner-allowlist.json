@@ -1,0 +1,25 @@
+{
+  "comment": "Allow-list for known/expected patterns in test logs that should NOT cause build failures. Patterns are regex strings (case-insensitive). Each entry MUST have a 'pattern' (>= 10 chars, no bare .* or .+ wildcards) and a 'reason' explaining why it is safe. Overly broad patterns are rejected at scanner startup.",
+  "entries": [
+    {
+      "pattern": "Error loading translations - starting up anyway",
+      "reason": "Expected sentinel startup warning when translations are absent in the test environment"
+    },
+    {
+      "pattern": "RES:.*\\s500.*test",
+      "reason": "Integration tests in tests/integration/api/ deliberately trigger 500s as part of failure-path coverage"
+    },
+    {
+      "pattern": "Invalid basic auth",
+      "reason": "Login integration tests intentionally test malformed/bad credentials and expect this error"
+    },
+    {
+      "pattern": "WARN:.*Unhandled rejection.*test",
+      "reason": "Test teardown occasionally surfaces unhandled promise rejections from deliberately-failed test cases"
+    },
+    {
+      "pattern": "ERROR:.*connect ECONNREFUSED",
+      "reason": "Services may briefly log ECONNREFUSED while waiting for CouchDB to become available during test startup"
+    }
+  ]
+}
