@@ -17,9 +17,9 @@
 
 'use strict';
 
-const fs       = require('fs');
-const path     = require('path');
-const readline = require('readline');
+const fs       = require('node:fs');
+const path     = require('node:path');
+const readline = require('node:readline');
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -85,68 +85,18 @@ const ERROR_CHECKS = [
     pattern: /\bRES:.*\s5\d\d\b/,
     redact: (line) => line,
   },
-  {
-    label: 'unexpected stack trace',
-    // A line starting with "    at " (Node.js stack frame) following an ERROR line
-    // is picked up by the multi-line stack-trace collector in scanFile(), not here.
-    // This pattern catches single-line ERROR entries that contain stack text inline.
-    pattern: /\bERROR:.*\s+at\s+\w/,
-    redact: (line) => line,
-  },
+  // Note: all non-allow-listed ERROR: lines are reported as 'unexpected server error'
+  // by checkErrors(). Multi-line stack traces are handled via inErrorBlock tracking.
 ];
-
-// ---------------------------------------------------------------------------
-// Allow-list validation
-// ---------------------------------------------------------------------------
-
-/**
- * Reads and validates the allow-list JSON file.
- * Exits with code 2 if any entry is too broad, forcing the developer to be specific.
- * @returns {RegExp[]} compiled allow-list patterns
- */
-const loadAllowlist = function () {
-  if (!fs.existsSync(ALLOWLIST_PATH)) {
-    console.warn(`[log-scanner] Allow-list not found at ${ALLOWLIST_PATH} — all matches will be reported`);
-    return [];
-  }
-
-  const raw = JSON.parse(fs.readFileSync(ALLOWLIST_PATH, 'utf8'));
-  const entries = raw.entries || [];
-  const compiled = [];
-
-  for (const entry of entries) {
-    const { pattern, reason } = entry;
-
-    if (!pattern) {
-      console.error(`[log-scanner] ERROR: allow-list entry missing 'pattern' field (reason: ${reason}). Exiting.`);
-      process.exit(2);
-    }
-
-    if (pattern.length < ALLOWLIST_MIN_PATTERN_LENGTH) {
-      console.error(
-        `[log-scanner] ERROR: allow-list pattern '${pattern}' is too short` +
-        ` (< ${ALLOWLIST_MIN_PATTERN_LENGTH} chars). Tighten the pattern or add a literal anchor. Exiting.`
-      );
-      process.exit(2);
-    }
-
-    if (ALLOWLIST_GENERIC_WILDCARD.test(pattern.trim())) {
-      console.error(
-        `[log-scanner] ERROR: allow-list pattern '${pattern}' is a bare wildcard` +
-        ` and would suppress all matches. Provide a more specific pattern. Exiting.`
-      );
-      process.exit(2);
-    }
-
-    compiled.push(new RegExp(pattern, 'i'));
-  }
-
-  return compiled;
-};
 
 // ---------------------------------------------------------------------------
 // Output helpers
 // ---------------------------------------------------------------------------
+
+/** Returns the redacted form of a matched line, or the raw line if no redactor is defined. */
+const getRedacted = function (check, line, match) {
+  return check.redact ? check.redact(line, match) : line;
+};
 
 /** Detect whether we are running inside a GitHub Actions runner. */
 const IS_GITHUB_ACTIONS = !!process.env.GITHUB_ACTIONS;
@@ -162,6 +112,124 @@ const emitViolation = function (filePath, lineNumber, label, redactedLine) {
   } else {
     console.log(`[VIOLATION] ${filePath}:${lineNumber}  [${label}]  ${redactedLine.trim()}`);
   }
+};
+
+// ---------------------------------------------------------------------------
+// Allow-list validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Validates a single allow-list entry. Exits with code 2 if the pattern is
+ * too short or is a bare wildcard that would suppress all matches.
+ */
+const validateAllowlistEntry = function (entry) {
+  const { pattern, reason } = entry;
+  if (!pattern) {
+    console.error(`[log-scanner] ERROR: allow-list entry missing 'pattern' field (reason: ${reason}). Exiting.`);
+    process.exit(2);
+  }
+  if (pattern.length < ALLOWLIST_MIN_PATTERN_LENGTH) {
+    console.error(
+      `[log-scanner] ERROR: allow-list pattern '${pattern}' is too short` +
+      ` (< ${ALLOWLIST_MIN_PATTERN_LENGTH} chars). Tighten the pattern or add a literal anchor. Exiting.`
+    );
+    process.exit(2);
+  }
+  if (ALLOWLIST_GENERIC_WILDCARD.test(pattern.trim())) {
+    console.error(
+      `[log-scanner] ERROR: allow-list pattern '${pattern}' is a bare wildcard` +
+      ` and would suppress all matches. Provide a more specific pattern. Exiting.`
+    );
+    process.exit(2);
+  }
+};
+
+/**
+ * Reads and validates the allow-list JSON file.
+ * @returns {RegExp[]} compiled allow-list patterns
+ */
+const loadAllowlist = function () {
+  if (!fs.existsSync(ALLOWLIST_PATH)) {
+    console.warn(`[log-scanner] Allow-list not found at ${ALLOWLIST_PATH} — all matches will be reported`);
+    return [];
+  }
+  const raw = JSON.parse(fs.readFileSync(ALLOWLIST_PATH, 'utf8'));
+  const entries = raw.entries || [];
+  entries.forEach(validateAllowlistEntry);
+  return entries.map(e => new RegExp(e.pattern, 'i'));
+};
+
+// ---------------------------------------------------------------------------
+// Per-line check helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks a single log line against all credential patterns.
+ * @returns {number} number of violations found
+ */
+const checkCredentials = function (line, isAllowed, filePath, lineNumber) {
+  if (isAllowed) {
+    return 0;
+  }
+  let count = 0;
+  for (const check of CREDENTIAL_CHECKS) {
+    check.pattern.lastIndex = 0;
+    const match = check.pattern.exec(line);
+    if (match) {
+      emitViolation(filePath, lineNumber, check.label, getRedacted(check, line, match));
+      count++;
+    }
+  }
+  return count;
+};
+
+/**
+ * Handles stack-frame tracking.
+ * - Suppresses stack frames when they follow a known ERROR line (inErrorBlock=true).
+ * - Reports orphan stack frames that appear without a preceding ERROR line.
+ * - Resets inErrorBlock when a non-stack-frame line is encountered.
+ * @returns {{ violations: number, inErrorBlock: boolean }}
+ */
+const checkStackFrame = function (line, isAllowed, inErrorBlock, filePath, lineNumber) {
+  const isStack = /^\s+at\s+\w/.test(line);
+  if (!isStack) {
+    return { violations: 0, inErrorBlock: false };
+  }
+  if (inErrorBlock) {
+    return { violations: 0, inErrorBlock: true };
+  }
+  if (!isAllowed) {
+    emitViolation(filePath, lineNumber, 'unexpected stack trace', line);
+    return { violations: 1, inErrorBlock: false };
+  }
+  return { violations: 0, inErrorBlock: false };
+};
+
+/**
+ * Checks a single log line against ERROR_CHECKS patterns and flags all
+ * non-allow-listed ERROR: lines as 'unexpected server error'.
+ * Also signals whether inErrorBlock should be set for the next line.
+ * @returns {{ violations: number, setErrorBlock: boolean }}
+ */
+const checkErrors = function (line, isAllowed, filePath, lineNumber) {
+  const isError = /\bERROR:/.test(line);
+  if (isAllowed) {
+    return { violations: 0, setErrorBlock: isError };
+  }
+  let violations = 0;
+  for (const check of ERROR_CHECKS) {
+    check.pattern.lastIndex = 0;
+    const match = check.pattern.exec(line);
+    if (match) {
+      emitViolation(filePath, lineNumber, check.label, getRedacted(check, line, match));
+      violations++;
+    }
+  }
+  if (isError) {
+    emitViolation(filePath, lineNumber, 'unexpected server error', line);
+    violations++;
+  }
+  return { violations, setErrorBlock: isError };
 };
 
 // ---------------------------------------------------------------------------
@@ -186,73 +254,21 @@ const scanFile = async function (filePath, allowlist) {
 
   for await (const line of rl) {
     lineNumber++;
-
-    // ── Large-line defence ──────────────────────────────────────────────────
     if (line.length > MAX_LINE_LENGTH) {
-      console.warn(
-        `[log-scanner] WARN: ${filePath}:${lineNumber}` +
-        ` — line too large to scan (${line.length} chars), skipping`
-      );
+      console.warn(`[log-scanner] WARN: ${filePath}:${lineNumber}` +
+        ` — line too large to scan (${line.length} chars), skipping`);
       inErrorBlock = false;
       continue;
     }
-
-    // ── Allow-list check ────────────────────────────────────────────────────
     const isAllowed = allowlist.some(re => re.test(line));
-
-    // ── Credential checks ───────────────────────────────────────────────────
-    for (const check of CREDENTIAL_CHECKS) {
-      // Reset lastIndex for global regexes between lines
-      check.pattern.lastIndex = 0;
-      const match = check.pattern.exec(line);
-      if (match && !isAllowed) {
-        const redacted = check.redact ? check.redact(line, match) : line;
-        emitViolation(filePath, lineNumber, check.label, redacted);
-        violations++;
-      }
-    }
-
-    // ── Stack-trace block tracking ──────────────────────────────────────────
-    // A Node.js stack trace consists of an ERROR line followed by one or more
-    // lines beginning with whitespace then "at ". Stack frames are suppressed
-    // once the ERROR line itself has been reported as a violation.
-    const isStackFrame = /^\s+at\s+\w/.test(line);
-
-    if (isStackFrame && inErrorBlock) {
-      // Suppress: the parent ERROR line was already reported as the violation
-    } else if (isStackFrame && !inErrorBlock) {
-      // Orphan stack frame with no preceding ERROR: line; report it directly
-      if (!isAllowed) {
-        emitViolation(filePath, lineNumber, 'unexpected stack trace', line);
-        violations++;
-      }
-    } else {
-      inErrorBlock = false;
-    }
-
-    // ── Error checks ────────────────────────────────────────────────────────
-    for (const check of ERROR_CHECKS) {
-      check.pattern.lastIndex = 0;
-      const match = check.pattern.exec(line);
-      if (match && !isAllowed) {
-        emitViolation(filePath, lineNumber, check.label, check.redact ? check.redact(line, match) : line);
-        violations++;
-      }
-    }
-
-    // Report any ERROR: line not already flagged and not allow-listed.
-    // This catches multi-line errors where the stack appears on subsequent lines.
-    const isErrorLine = /\bERROR:/.test(line);
-    const alreadyFlagged = ERROR_CHECKS.some(c => {
-      c.pattern.lastIndex = 0;
-      return c.pattern.test(line);
-    });
-    if (isErrorLine && !isAllowed && !alreadyFlagged) {
-      emitViolation(filePath, lineNumber, 'unexpected server error', line);
-      violations++;
-      inErrorBlock = true; // suppress subsequent stack-frame lines
-    } else if (isErrorLine && !isAllowed) {
-      inErrorBlock = true; // already flagged above; still suppress stack frames
+    violations += checkCredentials(line, isAllowed, filePath, lineNumber);
+    const stackResult = checkStackFrame(line, isAllowed, inErrorBlock, filePath, lineNumber);
+    violations += stackResult.violations;
+    inErrorBlock = stackResult.inErrorBlock;
+    const errorResult = checkErrors(line, isAllowed, filePath, lineNumber);
+    violations += errorResult.violations;
+    if (errorResult.setErrorBlock) {
+      inErrorBlock = true;
     }
   }
 
@@ -265,37 +281,26 @@ const scanFile = async function (filePath, allowlist) {
 
 const main = async function () {
   const logDir = process.argv[2];
-
   if (!logDir) {
     console.error('[log-scanner] Usage: node log-scanner.js <log-dir>');
     process.exit(2);
   }
-
   if (!fs.existsSync(logDir)) {
-    // Soft skip: the log directory may not exist if the test step was skipped.
     console.warn(`[log-scanner] Log directory not found: ${logDir} — skipping scan`);
     process.exit(0);
   }
-
   const allowlist = loadAllowlist();
-
-  const logFiles = fs.readdirSync(logDir)
-    .filter(f => f.endsWith('.log'))
-    .map(f => path.join(logDir, f));
-
+  const logFiles = fs.readdirSync(logDir).filter(f => f.endsWith('.log')).map(f => path.join(logDir, f));
   if (logFiles.length === 0) {
     console.warn(`[log-scanner] No *.log files found in ${logDir} — nothing to scan`);
     process.exit(0);
   }
-
   console.log(`[log-scanner] Scanning ${logFiles.length} log file(s) in ${logDir} …`);
-
   let totalViolations = 0;
   for (const filePath of logFiles) {
     const count = await scanFile(filePath, allowlist);
     totalViolations += count;
   }
-
   if (totalViolations > 0) {
     console.error(
       `\n[log-scanner] Found ${totalViolations} violation(s).\n` +
@@ -304,7 +309,6 @@ const main = async function () {
     );
     process.exit(1);
   }
-
   console.log('[log-scanner] No violations found. ✓');
 };
 
