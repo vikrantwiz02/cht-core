@@ -188,9 +188,10 @@ const checkCredentials = function (line, isAllowed, filePath, lineNumber) {
  * - Suppresses stack frames when they follow a known ERROR line (inErrorBlock=true).
  * - Reports orphan stack frames that appear without a preceding ERROR line.
  * - Resets inErrorBlock when a non-stack-frame line is encountered.
+ * @param {{ filePath: string, lineNumber: number }} loc  source location for violation output
  * @returns {{ violations: number, inErrorBlock: boolean }}
  */
-const checkStackFrame = function (line, isAllowed, inErrorBlock, filePath, lineNumber) {
+const checkStackFrame = function (line, isAllowed, inErrorBlock, loc) {
   const isStack = /^\s+at\s+\w/.test(line);
   if (!isStack) {
     return { violations: 0, inErrorBlock: false };
@@ -199,7 +200,7 @@ const checkStackFrame = function (line, isAllowed, inErrorBlock, filePath, lineN
     return { violations: 0, inErrorBlock: true };
   }
   if (!isAllowed) {
-    emitViolation(filePath, lineNumber, 'unexpected stack trace', line);
+    emitViolation(loc.filePath, loc.lineNumber, 'unexpected stack trace', line);
     return { violations: 1, inErrorBlock: false };
   }
   return { violations: 0, inErrorBlock: false };
@@ -262,7 +263,7 @@ const scanFile = async function (filePath, allowlist) {
     }
     const isAllowed = allowlist.some(re => re.test(line));
     violations += checkCredentials(line, isAllowed, filePath, lineNumber);
-    const stackResult = checkStackFrame(line, isAllowed, inErrorBlock, filePath, lineNumber);
+    const stackResult = checkStackFrame(line, isAllowed, inErrorBlock, { filePath, lineNumber });
     violations += stackResult.violations;
     inErrorBlock = stackResult.inErrorBlock;
     const errorResult = checkErrors(line, isAllowed, filePath, lineNumber);
