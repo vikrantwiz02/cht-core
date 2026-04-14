@@ -293,7 +293,8 @@ describe('CHTScriptApiService service', () => {
         permissions: {
           can_edit: [ 'chw_supervisor' ],
           can_configure: [ 'nurse' ]
-        }
+        },
+        roles: { chw_supervisor: {}, gateway: {} }
       });
       sessionService.userCtx.returns({ roles: [ 'chw_supervisor', 'gateway' ] });
       await service.isInitialized();
@@ -397,7 +398,8 @@ describe('CHTScriptApiService service', () => {
           can_add_people: [ 'national_admin', 'district_admin' ],
           can_add_places: [ 'national_admin', 'district_admin' ],
           can_roll_over: [ 'national_admin', 'district_admin' ]
-        }
+        },
+        roles: { national_admin: {}, district_admin: {}, analytics: {} }
       });
       sessionService.userCtx.returns({ roles: [ 'district_admin' ] });
       await service.isInitialized();
