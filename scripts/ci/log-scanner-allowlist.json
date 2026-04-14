@@ -20,6 +20,14 @@
     {
       "pattern": "ERROR:.*connect ECONNREFUSED",
       "reason": "Services may briefly log ECONNREFUSED while waiting for CouchDB to become available during test startup"
+    },
+    {
+      "pattern": "Input :: .*org\\.couchdb\\.user:",
+      "reason": "CouchDB OS-process debug log of _auth design-doc processing (validate_doc_update / map_doc) on user docs; the password field is hashed by CouchDB before storage and only appears in debug-level logs during tests"
+    },
+    {
+      "pattern": "Input :: .*\"_id\":\"messages-",
+      "reason": "CouchDB OS-process debug log of translation-doc mapping; language metadata fields (code, name) are falsely detected as credential keys"
     }
   ]
 }

@@ -92,8 +92,10 @@ const CREDENTIAL_CHECKS = [
 const ERROR_CHECKS = [
   {
     label: '500-level HTTP response',
-    // CHT log format for outgoing HTTP responses: "RES: … 5xx …"
-    pattern: /\bRES:.*\s5\d\d\b/,
+    // CHT morgan format: "RES: … HTTP/<version> <status> …"
+    // Anchored to the HTTP version token so content-length bytes (e.g. 504 B)
+    // do not produce false positives on 2xx responses.
+    pattern: /\bRES:.*HTTP\/\S+\s+5\d\d\b/,
     redact: (line) => line,
   },
   // Note: all non-allow-listed ERROR: lines are reported as 'unexpected server error'
@@ -310,6 +312,22 @@ const scanFile = async function (filePath, allowlist, scanErrors) {
 // Entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * Runs scanFile over every log file and returns the total violation count.
+ * Extracted to keep main() within the cognitive-complexity budget.
+ * @param {string[]}  logFiles   absolute paths to .log files
+ * @param {RegExp[]}  allowlist  compiled allow-list patterns
+ * @param {boolean}   scanErrors true when --scan-errors flag was passed
+ * @returns {Promise<number>}
+ */
+const runScans = async function (logFiles, allowlist, scanErrors) {
+  let total = 0;
+  for (const filePath of logFiles) {
+    total += await scanFile(filePath, allowlist, scanErrors);
+  }
+  return total;
+};
+
 const main = async function () {
   const logDir = process.argv[2];
   if (!logDir) {
@@ -329,11 +347,7 @@ const main = async function () {
     process.exit(0);
   }
   console.log(`[log-scanner] Scanning ${logFiles.length} log file(s) in ${logDir} [${mode}] …`);
-  let totalViolations = 0;
-  for (const filePath of logFiles) {
-    const count = await scanFile(filePath, allowlist, scanErrors);
-    totalViolations += count;
-  }
+  const totalViolations = await runScans(logFiles, allowlist, scanErrors);
   if (totalViolations > 0) {
     console.error(
       `\n[log-scanner] Found ${totalViolations} violation(s).\n` +
