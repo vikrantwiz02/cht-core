@@ -54,23 +54,38 @@ const BARE_ERROR_HEADER = /^(?!\d{4}-)\w*Error:\s/;
 // Detection patterns
 // ---------------------------------------------------------------------------
 
+const detectUserPassUrl = function (line) {
+  const schemeEnd = line.indexOf('://');
+  if (schemeEnd === -1) {
+    return null;
+  }
+  const userStart = schemeEnd + 3;
+  const atIdx = line.indexOf('@', userStart);
+  if (atIdx === -1) {
+    return null;
+  }
+  const userInfo = line.slice(userStart, atIdx); // "user:pass" segment
+  const colonIdx = userInfo.indexOf(':');
+  if (colonIdx < 1 || colonIdx >= userInfo.length - 1) {
+    return null; // no user, no pass, or empty pass
+  }
+  if (/[\s/]/.test(userInfo)) {
+    return null; // spaces or path separators mean this is not a credential URL
+  }
+  return [line.slice(schemeEnd, atIdx + 1)]; // ["scheme://user:pass@"]
+};
+
 /**
- * Each entry: { label, pattern, redact }
- *   label   – human-readable category name used in violation output
- *   pattern – RegExp to test against each log line
- *   redact  – optional function(line, match) → redacted string for safe display
+ * Each entry: { label, exec, redact }
+ *   label  – human-readable category name used in violation output
+ *   exec   – function(line) → match array (match[0] = full match) or null
+ *   redact – optional function(line, match) → redacted string for safe display
  */
 const CREDENTIAL_CHECKS = [
   {
     label: 'user:pass@host URL',
-    // Matches any scheme://user:pass@host pattern (http, https, couchdb, …).
-    // preFilter runs first (O(n) string ops) so the regex is only applied to
-    // lines that already contain both '://' and '@', bounding the input the
-    // regex engine sees and eliminating super-linear backtracking risk.
-    preFilter: (line) => line.includes('://') && line.includes('@'),
-    pattern: /[a-zA-Z][a-zA-Z0-9+\-.]*:\/\/[^:\s/]+:[^@\s/]+@/,
+    exec: detectUserPassUrl,
     redact: (line, match) => {
-      // Use lastIndexOf rather than a regex to avoid any backtracking concern.
       const url = match[0]; // e.g. 'http://user:pass@'
       const atPos = url.lastIndexOf('@');
       const colonPos = url.lastIndexOf(':', atPos);
@@ -80,21 +95,21 @@ const CREDENTIAL_CHECKS = [
   {
     label: 'credential in query parameter',
     // Matches ?password=value or &token=value etc. in URLs or log fragments
-    pattern: /(?:password|passwd|token|secret|api[_-]key)=[^&\s"']+/gi,
+    exec: (line) => /(?:password|passwd|token|secret|api[_-]key)=[^&\s"']+/i.exec(line),
     redact: (line, match) => line.replace(match[0], match[0].replace(/=.+/, '=[REDACTED]')),
   },
   {
     label: 'credential in JSON key/value',
     // Matches "password":"value" in serialised objects written to logs.
     // Negative lookahead skips already-redacted values (*** or [REDACTED]).
-    pattern: /"(?:password|passwd|token|secret|api[_-]key)"\s*:\s*"(?!\*{3}|\[REDACTED\])[^"]+"/i,
+    exec: (line) => /"(?:password|passwd|token|secret|api[_-]key)"\s*:\s*"(?!\*{3}|\[REDACTED\])[^"]+"/i.exec(line),
     redact: (line, match) => line.replace(match[0], match[0].replace(/:\s*"[^"]+"/, ': "[REDACTED]"')),
   },
   {
     label: 'Authorization header in log',
     // Matches Authorization: <value> that wasn't already masked.
     // The negative lookahead avoids flagging "Authorization: Bearer ***".
-    pattern: /\bAuthorization\s*:\s*(?!Bearer \*)\S+/i,
+    exec: (line) => /\bAuthorization\s*:\s*(?!Bearer \*)\S+/i.exec(line),
     redact: (line, match) => line.replace(match[0], 'Authorization: [REDACTED]'),
   },
 ];
@@ -187,6 +202,19 @@ const loadAllowlist = function () {
 // ---------------------------------------------------------------------------
 
 /**
+ * Applies a single credential check to a log line.
+ * @returns {number} 1 if a violation was found and reported, 0 otherwise
+ */
+const runCredentialCheck = function (check, line, filePath, lineNumber) {
+  const match = check.exec(line);
+  if (!match) {
+    return 0;
+  }
+  emitViolation(filePath, lineNumber, check.label, getRedacted(check, line, match));
+  return 1;
+};
+
+/**
  * Checks a single log line against all credential patterns.
  * Credential scanning always runs regardless of the --scan-errors flag.
  * @returns {number} number of violations found
@@ -197,15 +225,7 @@ const checkCredentials = function (line, isAllowed, filePath, lineNumber) {
   }
   let count = 0;
   for (const check of CREDENTIAL_CHECKS) {
-    if (check.preFilter && !check.preFilter(line)) {
-      continue;
-    }
-    check.pattern.lastIndex = 0;
-    const match = check.pattern.exec(line);
-    if (match) {
-      emitViolation(filePath, lineNumber, check.label, getRedacted(check, line, match));
-      count++;
-    }
+    count += runCredentialCheck(check, line, filePath, lineNumber);
   }
   return count;
 };
