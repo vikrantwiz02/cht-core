@@ -228,7 +228,7 @@ describe('XmlFormsContextUtils service', () => {
       getExtensionLib.returns(undefined);
 
       expect(() => utils.extensionLib('unknown.js')).to.throw(
-        'Form configuration error: no extension-lib with ID "unknown.js" found'
+        'Configuration error: no extension-lib with ID "unknown.js" found'
       );
     });
 

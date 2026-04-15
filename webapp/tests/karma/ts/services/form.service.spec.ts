@@ -1390,7 +1390,7 @@ describe('Form service', () => {
         contactRecordToJs: sinon.stub(),
       };
 
-      getDuplicates.callsFake((doc, contactType, siblings) => Promise.resolve(siblings));
+      getDuplicates.resolvesArg(2);
 
       TestBed.configureTestingModule({
         providers: [
