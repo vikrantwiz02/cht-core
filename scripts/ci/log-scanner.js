@@ -63,9 +63,19 @@ const BARE_ERROR_HEADER = /^(?!\d{4}-)\w*Error:\s/;
 const CREDENTIAL_CHECKS = [
   {
     label: 'user:pass@host URL',
-    // Matches any scheme://user:pass@host pattern (http, https, couchdb, …)
+    // Matches any scheme://user:pass@host pattern (http, https, couchdb, …).
+    // preFilter runs first (O(n) string ops) so the regex is only applied to
+    // lines that already contain both '://' and '@', bounding the input the
+    // regex engine sees and eliminating super-linear backtracking risk.
+    preFilter: (line) => line.includes('://') && line.includes('@'),
     pattern: /[a-zA-Z][a-zA-Z0-9+\-.]*:\/\/[^:\s/]+:[^@\s/]+@/,
-    redact: (line, match) => line.replace(match[0], match[0].replace(/:[^@]+@/, ':[REDACTED]@')),
+    redact: (line, match) => {
+      // Use lastIndexOf rather than a regex to avoid any backtracking concern.
+      const url = match[0]; // e.g. 'http://user:pass@'
+      const atPos = url.lastIndexOf('@');
+      const colonPos = url.lastIndexOf(':', atPos);
+      return line.replace(url, url.slice(0, colonPos + 1) + '[REDACTED]' + url.slice(atPos));
+    },
   },
   {
     label: 'credential in query parameter',
@@ -187,6 +197,9 @@ const checkCredentials = function (line, isAllowed, filePath, lineNumber) {
   }
   let count = 0;
   for (const check of CREDENTIAL_CHECKS) {
+    if (check.preFilter && !check.preFilter(line)) {
+      continue;
+    }
     check.pattern.lastIndex = 0;
     const match = check.pattern.exec(line);
     if (match) {
