@@ -28,6 +28,26 @@
     {
       "pattern": "Input :: .*\"_id\":\"messages-",
       "reason": "CouchDB OS-process debug log of translation-doc mapping; language metadata fields (code, name) are falsely detected as credential keys"
+    },
+    {
+      "pattern": "STARTUP RES:",
+      "reason": "Requests logged by the setup-phase morgan middleware (api/src/services/setup/router.js) before the API is fully initialised; 502/503 responses are expected during container boot"
+    },
+    {
+      "pattern": "transitions: processChange failed for",
+      "reason": "Sentinel transition processing errors that occur when e2e tests create or modify docs that are in a partial/inconsistent state during setup or teardown (shared-libs/transitions/src/transitions/index.js)"
+    },
+    {
+      "pattern": "transition .* errored on doc .* seq",
+      "reason": "Individual transition handler errors logged by Sentinel during WebDriver tests; specific transitions (e.g. create_user_for_contacts) may error when test fixtures don't satisfy all transition preconditions (shared-libs/transitions/src/transitions/index.js)"
+    },
+    {
+      "pattern": "Error occurred when connecting to upgrade service:",
+      "reason": "The upgrade service is not running during normal WebDriver test jobs; transient connection failures are expected (api/src/services/setup/utils.js)"
+    },
+    {
+      "pattern": "at TCPConnectWrap.afterConnect",
+      "reason": "Node.js internal network stack frame from connection retries during startup; appears when services probe endpoints that are not yet listening"
     }
   ]
 }
