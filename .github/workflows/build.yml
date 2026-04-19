@@ -2,9 +2,6 @@ name: Build and test
 
 on: [push, pull_request]
 
-permissions:
-  contents: read
-
 env:
   COUCH_URL: http://admin:pass@localhost:5984/medic-test
   BUILDS_SERVER: ${{ secrets.AUTH_MARKET_URL && '_couch/builds_testing' || '_couch/builds_external' }}
@@ -103,7 +100,8 @@ jobs:
     # these tests fail on newer os. https://github.com/medic/cht-conf-test-harness/issues/279
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -127,7 +125,8 @@ jobs:
   test-cht-form:
     needs: build
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
@@ -150,7 +149,8 @@ jobs:
     name: ${{ matrix.cmd }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -232,6 +232,8 @@ jobs:
     needs: build
     name: Lint translations
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
     steps:
@@ -250,10 +252,14 @@ jobs:
     name: Build generated docs
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4  # zizmor: ignore[cache-poisoning]
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm ci
@@ -262,7 +268,7 @@ jobs:
         run: npm run build-documentation
       - name: Cache generated docs
         if: github.ref == 'refs/heads/master'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           key: cht-datasource-docs
           path: ./shared-libs/cht-datasource/docs
@@ -272,7 +278,8 @@ jobs:
     name: ${{ matrix.cmd }}-${{ matrix.suite || '' }}${{ matrix.chrome-version == '107' && '-minimum-browser' || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    
+    permissions:
+      contents: read
     env:
       CHROME_VERSION: ${{ matrix.chrome-version }}
       JOB_NAME: ${{ matrix.cmd }}-${{ matrix.suite || '' }}${{ matrix.chrome-version == '107' && '-minimum-browser' || '' }}
@@ -400,7 +407,8 @@ jobs:
     name: Publish branch build
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    
+    permissions:
+      contents: read
     if: ${{ github.event_name != 'pull_request' }}
 
     steps:
@@ -453,6 +461,8 @@ jobs:
     name: Publish generated docs
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Restore generated docs
@@ -478,7 +488,8 @@ jobs:
     name: Upgrade from ${{ matrix.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
+    permissions:
+      contents: read
     if: ${{ github.event_name != 'pull_request' }}
 
     strategy:
