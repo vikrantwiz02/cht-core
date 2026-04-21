@@ -1408,11 +1408,23 @@ mm-sidebar-menu .mat-sidenav-container {
       color: @text-secondary-color;
     }
 
-    mat-icon {
+    mat-icon,
+    .nav-icon {
       text-align: center;
       margin-right: 15px;
       margin-left: 10px;
       flex-shrink: 0;
+    }
+
+    .nav-icon {
+      width: @icon-extra-small;
+      height: @icon-extra-small;
+
+      img,
+      svg {
+        width: 100%;
+        height: 100%;
+      }
     }
 
     mat-icon.fa-graduation-cap:before {
@@ -1488,7 +1500,8 @@ mm-sidebar-menu .mat-sidenav-container {
       height: calc(@sidebar-menu-height - @sidebar-menu-header-mobile);
     }
 
-    .nav-item mat-icon {
+    .nav-item mat-icon,
+    .nav-item .nav-icon {
       margin-left: -6px;
     }
 

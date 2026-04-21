@@ -5,15 +5,6 @@
     <mat-sidenav-content>
 
       <div class="nav-section">
-        <a *ngFor="let module of moduleOptions"
-          class="nav-item"
-          [routerLink]="module.routerLink"
-          (click)="close()"
-          [mmAuth]="module.hasPermissions">
-          <mat-icon [fontIcon]="module.icon"></mat-icon>
-          <span>{{ module.translationKey | translate }}</span>
-        </a>
-
         <a class="nav-item"
           [attr.href]="adminAppPath"
           mmAuth
@@ -71,13 +62,14 @@
       </div>
 
       <div class="nav-section">
-        <ng-container *ngFor="let option of secondaryOptions">
+        <ng-container *ngFor="let option of menuOptions">
           <a class="nav-item"
             *ngIf="option.hasPermissions"
             [routerLink]="option.routerLink"
             [mmAuth]="option.hasPermissions"
             (click)="option.click && option.click(); close()">
-            <mat-icon [fontIcon]="option.icon"></mat-icon>
+            <span class="nav-icon" *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
+            <mat-icon *ngIf="!option.resourceIcon" [fontIcon]="option.icon"></mat-icon>
             <span>{{ option.translationKey | translate }}</span>
           </a>
 
@@ -85,7 +77,8 @@
             *ngIf="!option.hasPermissions && option.canDisplay"
             [routerLink]="option.routerLink"
             (click)="option.click && option.click(); close()">
-            <mat-icon [fontIcon]="option.icon"></mat-icon>
+            <span class="nav-icon" *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
+            <mat-icon *ngIf="!option.resourceIcon" [fontIcon]="option.icon"></mat-icon>
             <span>{{ option.translationKey | translate }}</span>
           </a>
         </ng-container>
