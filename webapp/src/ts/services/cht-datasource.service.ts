@@ -44,11 +44,11 @@ export class CHTDatasourceService {
   }
 
   private async createDataContext() {
+    const settingsService = { getAll: () => this.settings };
     if (this.sessionService.isOnlineOnly(this.userCtx)) {
-      return getRemoteDataContext();
+      return getRemoteDataContext(settingsService);
     }
 
-    const settingsService = { getAll: () => this.settings };
     const sourceDatabases = { medic: await this.dbService.get() };
     return getLocalDataContext(settingsService, sourceDatabases);
   }
