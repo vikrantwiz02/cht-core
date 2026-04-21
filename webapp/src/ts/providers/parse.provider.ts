@@ -1,9 +1,6 @@
 import {
   Lexer,
   Parser,
-  ParseSourceFile,
-  ParseLocation,
-  ParseSourceSpan,
   BindingPipe,
   PropertyRead,
   ImplicitReceiver,
@@ -16,6 +13,9 @@ import {
   KeyedRead,
   LiteralMap,
   LiteralArray,
+  ParseSourceSpan,
+  ParseSourceFile,
+  ParseLocation,
   ParenthesizedExpression,
 } from '@angular/compiler';
 import { Injectable } from '@angular/core';

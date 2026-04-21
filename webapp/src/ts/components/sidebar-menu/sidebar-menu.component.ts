@@ -22,6 +22,39 @@ import { UiExtensionsService } from '@mm-services/ui-extensions.service';
 import { filter } from 'rxjs/operators';
 import { Selectors } from '@mm-selectors/index';
 
+const TAB_MENU_OPTIONS = [
+  {
+    routerLink: 'messages',
+    icon: 'fa-envelope',
+    translationKey: 'Messages',
+    hasPermissions: 'can_view_messages,!can_view_messages_tab'
+  },
+  {
+    routerLink: 'tasks',
+    icon: 'fa-flag',
+    translationKey: 'Tasks',
+    hasPermissions: 'can_view_tasks,!can_view_tasks_tab'
+  },
+  {
+    routerLink: 'reports',
+    icon: 'fa-list-alt',
+    translationKey: 'Reports',
+    hasPermissions: 'can_view_reports,!can_view_reports_tab'
+  },
+  {
+    routerLink: 'contacts',
+    icon: 'fa-user',
+    translationKey: 'Contacts',
+    hasPermissions: 'can_view_contacts,!can_view_contacts_tab'
+  },
+  {
+    routerLink: 'analytics',
+    icon: 'fa-bar-chart-o',
+    translationKey: 'Analytics',
+    hasPermissions: 'can_view_analytics,!can_view_analytics_tab',
+  },
+];
+
 @Component({
   selector: 'mm-sidebar-menu',
   templateUrl: './sidebar-menu.component.html',
@@ -46,10 +79,7 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
   @ViewChild('sidebar') sidebar!: MatSidenav;
   private globalActions: GlobalActions;
   replicationStatus;
-  moduleOptions: MenuOption[] = [];
-  secondaryOptions: MenuOption[] = [];
-  uiExtensionOptions: MenuOption[] = [];
-  mergedOptions: MenuOption[] = [];
+  menuOptions: MenuOption[] = [];
   adminAppPath: string = '';
 
   constructor(
@@ -68,9 +98,6 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
   ngOnInit() {
     super.ngOnInit();
     this.adminAppPath = this.locationService.adminPath;
-    this.setModuleOptions();
-    this.setUiExtensionOptions();
-    this.setSecondaryOptions();
     this.additionalSubscriptions();
     this.subscribeToRouter();
   }
@@ -105,48 +132,13 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
 
     const subscribePrivacyPolicy = this.store
       .select(Selectors.getShowPrivacyPolicy)
-      .subscribe(showPrivacyPolicy => this.setSecondaryOptions(showPrivacyPolicy));
+      .subscribe(showPrivacyPolicy => this.setMenuOptions(showPrivacyPolicy));
     this.subscriptions.add(subscribePrivacyPolicy);
   }
 
-  private setModuleOptions() {
-    this.moduleOptions = [
-      {
-        routerLink: 'messages',
-        icon: 'fa-envelope',
-        translationKey: 'Messages',
-        hasPermissions: 'can_view_messages,!can_view_messages_tab'
-      },
-      {
-        routerLink: 'tasks',
-        icon: 'fa-flag',
-        translationKey: 'Tasks',
-        hasPermissions: 'can_view_tasks,!can_view_tasks_tab'
-      },
-      {
-        routerLink: 'reports',
-        icon: 'fa-list-alt',
-        translationKey: 'Reports',
-        hasPermissions: 'can_view_reports,!can_view_reports_tab'
-      },
-      {
-        routerLink: 'contacts',
-        icon: 'fa-user',
-        translationKey: 'Contacts',
-        hasPermissions: 'can_view_contacts,!can_view_contacts_tab'
-      },
-      {
-        routerLink: 'analytics',
-        icon: 'fa-bar-chart-o',
-        translationKey: 'Analytics',
-        hasPermissions: 'can_view_analytics,!can_view_analytics_tab',
-      },
-    ];
-  }
-
-  private async setUiExtensionOptions() {
+  private async getUiExtensionOptions() {
     const extensions = await this.uiExtensionsService.getPropertiesByType('app_drawer_tab');
-    this.uiExtensionOptions = extensions
+    return extensions
       .filter(ext => ext.title)
       .map(ext => ({
         routerLink: `ui-extensions/${ext.id}`,
@@ -154,19 +146,18 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
         resourceIcon: ext.icon,
         canDisplay: true,
       }));
-    this.buildMergedOptions();
   }
 
-  private buildMergedOptions() {
-    this.mergedOptions = [
-      ...this.moduleOptions,
-      ...this.uiExtensionOptions,
-      ...this.secondaryOptions,
+  private async setMenuOptions(showPrivacyPolicy: boolean) {
+    this.menuOptions = [
+      ...TAB_MENU_OPTIONS,
+      ...(await this.getUiExtensionOptions()),
+      ...this.getSecondaryOptions(showPrivacyPolicy),
     ];
   }
 
-  private setSecondaryOptions(showPrivacyPolicy = false) {
-    this.secondaryOptions = [
+  private getSecondaryOptions(showPrivacyPolicy: boolean) {
+    return [
       {
         routerLink: 'trainings',
         icon: 'fa-graduation-cap',
@@ -198,7 +189,6 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
         click: () => this.openFeedback()
       },
     ];
-    this.buildMergedOptions();
   }
 }
 

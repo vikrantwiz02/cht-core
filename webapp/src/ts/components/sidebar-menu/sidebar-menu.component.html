@@ -62,13 +62,13 @@
       </div>
 
       <div class="nav-section">
-        <ng-container *ngFor="let option of mergedOptions">
+        <ng-container *ngFor="let option of menuOptions">
           <a class="nav-item"
             *ngIf="option.hasPermissions"
             [routerLink]="option.routerLink"
             [mmAuth]="option.hasPermissions"
             (click)="option.click && option.click(); close()">
-            <span *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
+            <span class="nav-icon" *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
             <mat-icon *ngIf="!option.resourceIcon" [fontIcon]="option.icon"></mat-icon>
             <span>{{ option.translationKey | translate }}</span>
           </a>
@@ -77,7 +77,7 @@
             *ngIf="!option.hasPermissions && option.canDisplay"
             [routerLink]="option.routerLink"
             (click)="option.click && option.click(); close()">
-            <span *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
+            <span class="nav-icon" *ngIf="option.resourceIcon" [innerHTML]="option.resourceIcon | resourceIcon"></span>
             <mat-icon *ngIf="!option.resourceIcon" [fontIcon]="option.icon"></mat-icon>
             <span>{{ option.translationKey | translate }}</span>
           </a>
