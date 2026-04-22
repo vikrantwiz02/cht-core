@@ -528,40 +528,8 @@ describe('EditUserCtrl controller', () => {
             },
           ]);
           chai.expect(hasPermissions.args).to.deep.equal([
-            [
-              ['can_skip_password_change' ],
-              [ 'district-manager', 'supervisor' ],
-              {
-                permissions: {
-                  can_have_multiple_places: [ 'community-health-assistant' ],
-                  can_skip_password_change: [ 'community-health-assistant' ]
-                },
-                roles: {
-                  'district-manager': { name: 'xyz', offline: true },
-                  'community-health-assistant': { name: 'xyz', offline: true },
-                  'data-entry': { name: 'abc' },
-                  supervisor: { name: 'qrt', offline: true },
-                  'national-manager': { name: 'national-manager', offline: false },
-                }
-              }
-            ],
-            [
-              [ 'can_have_multiple_places' ],
-              [ 'community-health-assistant' ],
-              {
-                permissions: {
-                  can_have_multiple_places: [ 'community-health-assistant' ],
-                  can_skip_password_change: [ 'community-health-assistant' ]
-                },
-                roles: {
-                  'district-manager': { name: 'xyz', offline: true },
-                  'community-health-assistant': { name: 'xyz', offline: true },
-                  'data-entry': { name: 'abc' },
-                  supervisor: { name: 'qrt', offline: true },
-                  'national-manager': { name: 'national-manager', offline: false },
-                }
-              }
-            ]
+            [['can_skip_password_change'], ['district-manager', 'supervisor']],
+            [['can_have_multiple_places'], ['community-health-assistant']]
           ]);
           chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
@@ -1163,21 +1131,8 @@ describe('EditUserCtrl controller', () => {
       return mockEditAUser(user).setupPromise.then(() => {
         chai.expect(scope.skipPasswordChange).to.equal(false);
         chai.expect(hasPermissions.calledOnceWithExactly(
-          ['can_skip_password_change' ],
-          [ 'supervisor' ],
-          {
-            permissions: {
-              can_have_multiple_places: [ 'community-health-assistant' ],
-              can_skip_password_change: [ 'community-health-assistant' ]
-            },
-            roles: {
-              'district-manager': { name: 'xyz', offline: true },
-              'community-health-assistant': { name: 'xyz', offline: true },
-              'data-entry': { name: 'abc' },
-              supervisor: { name: 'qrt', offline: true },
-              'national-manager': { name: 'national-manager', offline: false },
-            }
-          }
+          ['can_skip_password_change'],
+          ['supervisor']
         )).to.be.true;
       });
     });
@@ -1189,21 +1144,8 @@ describe('EditUserCtrl controller', () => {
       return mockEditAUser(user).setupPromise.then(() => {
         chai.expect(scope.skipPasswordChange).to.equal(true);
         chai.expect(hasPermissions.calledOnceWithExactly(
-          ['can_skip_password_change' ],
-          [ 'community-health-assistant' ],
-          {
-            permissions: {
-              can_have_multiple_places: [ 'community-health-assistant' ],
-              can_skip_password_change: [ 'community-health-assistant' ]
-            },
-            roles: {
-              'district-manager': { name: 'xyz', offline: true },
-              'community-health-assistant': { name: 'xyz', offline: true },
-              'data-entry': { name: 'abc' },
-              supervisor: { name: 'qrt', offline: true },
-              'national-manager': { name: 'national-manager', offline: false },
-            }
-          }
+          ['can_skip_password_change'],
+          ['community-health-assistant']
         )).to.be.true;
       });
     });

@@ -479,7 +479,7 @@ const isPasswordChangeRequired = (user, data, fullAccess) => {
 
   const userRoles = data.roles || user?.roles;
   const chtDatasource = getDatasource(dataContext);
-  return !chtDatasource.v1.hasPermissions(['can_skip_password_change'], userRoles, config.getAll());
+  return !chtDatasource.v1.hasPermissions(['can_skip_password_change'], userRoles);
 };
 
 const getUserUpdates = (user, data, fullAccess = false) => {
@@ -637,7 +637,7 @@ const validateAllowedMultipleFacilities = (data, user) => {
 
   const userRoles = data.roles || user?.roles;
   const chtDatasource = getDatasource(dataContext);
-  if (!userRoles || !chtDatasource.v1.hasPermissions(['can_have_multiple_places'], userRoles, config.getAll())) {
+  if (!userRoles || !chtDatasource.v1.hasPermissions(['can_have_multiple_places'], userRoles)) {
     throw error400(
       'This user cannot have multiple places',
       'field is required',

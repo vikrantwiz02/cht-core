@@ -27,7 +27,6 @@ const contactMilan = {
   type: 'person',
   name: 'milan',
 };
-const SETTINGS = { hello: 'world' };
 
 let userData;
 let clock;
@@ -44,7 +43,6 @@ describe('Users service', () => {
   beforeEach(() => {
     config.init({
       get: sinon.stub(),
-      getAll: sinon.stub().returns(SETTINGS),
       getTransitionsLib: sinon.stub(),
     });
     db.init({
@@ -2295,8 +2293,7 @@ describe('Users service', () => {
 
       chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
         ['can_have_multiple_places'],
-        ['a', 'b'],
-        SETTINGS
+        ['a', 'b']
       );
     });
 
@@ -2429,8 +2426,8 @@ describe('Users service', () => {
         password_change_required: false
       }]]);
       chai.expect(hasPermissions.args).to.deep.equal([
-        [['can_have_multiple_places'], ['national-manager'], SETTINGS],
-        [['can_skip_password_change'], ['national-manager'], SETTINGS],
+        [['can_have_multiple_places'], ['national-manager']],
+        [['can_skip_password_change'], ['national-manager']],
       ]);
     });
 
@@ -4378,8 +4375,8 @@ describe('Users service', () => {
         chai.expect(places.placesExist.calledOnceWithExactly(ssoUserData.place)).to.be.true;
         chai.expect(people.isAPerson.args).to.deep.equal([[userContact], [userContact], [userContact]]);
         chai.expect(hasPermissions.args).to.deep.equal([
-          [['can_have_multiple_places'], ssoUserData.roles, SETTINGS],
-          [['can_skip_password_change'], ssoUserData.roles, SETTINGS],
+          [['can_have_multiple_places'], ssoUserData.roles],
+          [['can_skip_password_change'], ssoUserData.roles],
         ]);
       });
     });
@@ -4446,7 +4443,7 @@ describe('Users service', () => {
         chai.expect(service.__get__('validateNewUsername').calledOnceWithExactly(expectedUser.name)).to.be.true;
         chai.expect(people.isAPerson.calledOnceWithExactly(userContact)).to.be.true;
         chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
-          ['can_skip_password_change'], expectedUser.roles, SETTINGS
+          ['can_skip_password_change'], expectedUser.roles
         );
       });
     });
@@ -4539,7 +4536,7 @@ describe('Users service', () => {
         chai.expect(service.__get__('validateNewUsername').calledOnceWithExactly(expectedUser1.name)).to.be.true;
         chai.expect(people.isAPerson.calledOnceWithExactly(userContact)).to.be.true;
         chai.expect(hasPermissions).to.have.been.calledOnceWithExactly(
-          ['can_skip_password_change'], expectedUser1.roles, SETTINGS
+          ['can_skip_password_change'], expectedUser1.roles
         );
       });
 
@@ -4642,9 +4639,9 @@ describe('Users service', () => {
           [userContact]
         ]);
         chai.expect(hasPermissions.args).to.deep.equal([
-          [['can_skip_password_change'], expectedUser.roles, SETTINGS],
-          [['can_skip_password_change'], expectedUser1.roles, SETTINGS],
-          [['can_skip_password_change'], expectedUser2.roles, SETTINGS],
+          [['can_skip_password_change'], expectedUser.roles],
+          [['can_skip_password_change'], expectedUser1.roles],
+          [['can_skip_password_change'], expectedUser2.roles],
         ]);
       });
     });

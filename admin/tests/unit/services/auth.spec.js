@@ -1,4 +1,5 @@
 const { USER_ROLES: { COUCHDB_ADMIN } } = require('@medic/constants');
+const cht = require('@medic/cht-datasource');
 
 describe('Auth service', function() {
 
@@ -6,22 +7,30 @@ describe('Auth service', function() {
 
   let service;
   let userCtx;
-  let Settings;
   let isOnlineOnly;
+  let currentSettings;
+  let DataContext;
+
+  const setSettings = settings => currentSettings = settings;
 
   beforeEach(function () {
     module('adminApp');
     userCtx = sinon.stub();
-    Settings = sinon.stub().resolves({});
     isOnlineOnly = sinon.stub();
+    currentSettings = {};
+
+    const settingsService = { getAll: () => currentSettings };
+    const remoteContext = cht.getRemoteDataContext(settingsService, '');
+    const dataContext = Object.assign({}, remoteContext, {
+      getDatasource: () => cht.getDatasource(remoteContext)
+    });
+    DataContext = Promise.resolve(dataContext);
+
     module(function ($provide) {
       $provide.factory('Session', function() {
         return { userCtx: userCtx, isOnlineOnly: isOnlineOnly };
       });
-      $provide.factory('Settings', function() {
-        return Settings;
-      });
-      $provide.value('Changes', sinon.stub());
+      $provide.value('DataContext', DataContext);
     });
     inject(function($injector) {
       service = $injector.get('Auth');
@@ -29,17 +38,17 @@ describe('Auth service', function() {
   });
 
   afterEach(function() {
-    KarmaUtils.restore(userCtx, Settings);
+    KarmaUtils.restore(userCtx);
   });
 
   describe('has', () => {
     it('should return false when no settings and no permissions configured.', async () => {
       userCtx.returns({ roles: ['chw'] });
 
-      Settings.resolves(null);
+      setSettings(null);
       const resultNoSettings = await service.has('can_edit');
 
-      Settings.resolves({});
+      setSettings({});
       const resultNoPermissions = await service.has('can_edit');
 
       chai.expect(resultNoSettings).to.be.false;
@@ -48,35 +57,46 @@ describe('Auth service', function() {
 
     it('false when no session', async () => {
       userCtx.returns(null);
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.has();
       chai.expect(result).to.be.false;
     });
 
     it('false when user has no role', async () => {
       userCtx.returns({});
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.has();
       chai.expect(result).to.be.false;
     });
 
     it('true when user is db admin', async () => {
       userCtx.returns({ roles: [COUCHDB_ADMIN] });
-      Settings.resolves({ permissions: { can_edit: [ 'chw' ] } });
+      setSettings({ permissions: { can_edit: [ 'chw' ] } });
       const result = await service.has(['can_backup_facilities']);
       chai.expect(result).to.be.true;
     });
 
-    it('false when settings errors', async () => {
+    it('false when the data context rejects', async () => {
+      // Re-inject Auth with a rejecting DataContext
+      module('adminApp');
+      module(function ($provide) {
+        $provide.value('DataContext', Promise.reject(new Error('boom')));
+        $provide.factory('Session', function() {
+          return { userCtx: userCtx, isOnlineOnly: isOnlineOnly };
+        });
+      });
+      inject(function($injector) {
+        service = $injector.get('Auth');
+      });
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.returns(Promise.reject('boom'));
+
       const result = await service.has(['can_backup_facilities']);
       chai.expect(result).to.be.false;
     });
 
     it('false when perm is empty string', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -99,7 +119,7 @@ describe('Auth service', function() {
 
       it('false when unknown permission', async () => {
         userCtx.returns({ roles: ['district_admin'] });
-        Settings.resolves({
+        setSettings({
           permissions: {
             can_backup_facilities: ['national_admin'],
             can_export_messages: [
@@ -116,7 +136,7 @@ describe('Auth service', function() {
 
       it('true when !unknown permission', async () => {
         userCtx.returns({ roles: ['district_admin'] });
-        Settings.resolves({
+        setSettings({
           permissions: {
             can_backup_facilities: ['national_admin'],
             can_export_messages: [
@@ -135,7 +155,7 @@ describe('Auth service', function() {
 
     it('false when user does not have permission', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -152,7 +172,7 @@ describe('Auth service', function() {
 
     it('false when user does not have all permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -169,7 +189,7 @@ describe('Auth service', function() {
 
     it('true when user has all permissions', async () => {
       userCtx.returns({ roles: ['national_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -186,14 +206,14 @@ describe('Auth service', function() {
 
     it('false when admin and !permission', async () => {
       userCtx.returns({ roles: [COUCHDB_ADMIN] });
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.has(['!can_backup_facilities']);
       chai.expect(result).to.be.false;
     });
 
     it('rejects when user has one of the !permissions', async () => {
       userCtx.returns({ roles: ['analytics'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -211,7 +231,7 @@ describe('Auth service', function() {
 
     it('true when user has none of the !permissions', async () => {
       userCtx.returns({ roles: ['analytics'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_export_messages: [
@@ -232,10 +252,10 @@ describe('Auth service', function() {
     it('should return false when no settings and no permissions configured.', async () => {
       userCtx.returns({ roles: ['chw'] });
 
-      Settings.resolves(null);
+      setSettings(null);
       const resultNoSettings = await service.any([['can_edit'], ['can_configure']]);
 
-      Settings.resolves({});
+      setSettings({});
       const resultNoPermissions = await service.any([['can_edit'], ['can_configure']]);
 
       chai.expect(resultNoSettings).to.be.false;
@@ -244,42 +264,42 @@ describe('Auth service', function() {
 
     it('false when no session', async () => {
       userCtx.returns(null);
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.any();
       chai.expect(result).to.be.false;
     });
 
     it('false when user has no role', async () => {
       userCtx.returns({});
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.any();
       chai.expect(result).to.be.false;
     });
 
     it('true when admin and no disallowed permissions', async () => {
       userCtx.returns({ roles: [COUCHDB_ADMIN] });
-      Settings.resolves({ permissions: { can_edit: [ 'chw' ] } });
+      setSettings({ permissions: { can_edit: [ 'chw' ] } });
       const result = await service.any([['can_backup_facilities'], ['can_export_messages'], ['somepermission']]);
       chai.expect(result).to.be.true;
     });
 
     it('true when admin and some disallowed permissions', async () => {
       userCtx.returns({ roles: [COUCHDB_ADMIN] });
-      Settings.resolves({ permissions: { can_edit: [ 'chw' ] } });
+      setSettings({ permissions: { can_edit: [ 'chw' ] } });
       const result = await service.any([['!can_backup_facilities'], ['!can_export_messages'], ['somepermission']]);
       chai.expect(result).to.be.true;
     });
 
     it('false when admin and all disallowed permissions', async () => {
       userCtx.returns({ roles: [COUCHDB_ADMIN] });
-      Settings.resolves({ permissions: {} });
+      setSettings({ permissions: {} });
       const result = await service.any([['!can_backup_facilities'], ['!can_export_messages'], ['!somepermission']]);
       chai.expect(result).to.be.false;
     });
 
     it('true when user has all permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_export_messages: [
@@ -304,7 +324,7 @@ describe('Auth service', function() {
 
     it('true when user has some permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_backup_people: ['national_admin', 'district_admin'],
@@ -323,7 +343,7 @@ describe('Auth service', function() {
 
     it('false when user has none of the permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin'],
           can_backup_people: ['national_admin'],
@@ -341,7 +361,7 @@ describe('Auth service', function() {
 
     it('true when user has all permissions and no disallowed permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_export_messages: [
@@ -367,7 +387,7 @@ describe('Auth service', function() {
 
     it('true when user has some permissions and some disallowed permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_backup_people: ['national_admin', 'district_admin'],
@@ -388,7 +408,7 @@ describe('Auth service', function() {
 
     it('false when user has all disallowed permissions', async () => {
       userCtx.returns({ roles: ['district_admin'] });
-      Settings.resolves({
+      setSettings({
         permissions: {
           can_backup_facilities: ['national_admin', 'district_admin'],
           can_backup_people: ['national_admin', 'district_admin'],

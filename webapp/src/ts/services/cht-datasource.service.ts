@@ -90,10 +90,6 @@ export class CHTDatasourceService {
     });
   }
 
-  private resolveSettings(chtSettings) {
-    return chtSettings || this.settings;
-  }
-
   private getRolesFromUser(user) {
     return user?.roles || this.userCtx?.roles;
   }
@@ -141,13 +137,11 @@ export class CHTDatasourceService {
         ...dataSource.v1,
         hasPermissions: (permissions, user?, chtSettings?) => {
           const userRoles = this.getRolesFromUser(user);
-          return dataSource.v1.hasPermissions(permissions, userRoles, this.resolveSettings(chtSettings));
+          return dataSource.v1.hasPermissions(permissions, userRoles, chtSettings?.permissions);
         },
         hasAnyPermission: (permissionsGroupList, user?, chtSettings?) => {
           const userRoles = this.getRolesFromUser(user);
-          return dataSource.v1.hasAnyPermission(
-            permissionsGroupList, userRoles, this.resolveSettings(chtSettings)
-          );
+          return dataSource.v1.hasAnyPermission(permissionsGroupList, userRoles, chtSettings?.permissions);
         },
         getExtensionLib: (id) => {
           return this.extensionLibs[id];
