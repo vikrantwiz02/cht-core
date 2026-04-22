@@ -33,6 +33,13 @@ rules:
       # available for the duration of the job. Risk accepted: 2026-04-11.
       - .github/workflows/build.yml
 
+  secrets-outside-env:
+    ignore:
+      # publish-generated-docs uses personal_token (PAT) not GITHUB_TOKEN, and
+      # only runs on non-PR events with an additional master-branch guard on the
+      # deploy step. Risk accepted: 2026-04-22.
+      - .github/workflows/build.yml:publish-generated-docs
+
   dependabot-cooldown:
     config:
       # Weekly updates (7 days) match our existing npm Dependabot schedule and
