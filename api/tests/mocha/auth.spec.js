@@ -239,7 +239,7 @@ describe('Auth', () => {
 
       chai.expect(result).to.deep.equal(userCtx);
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.getAll).to.have.been.calledOnceWithExactly();
+      chai.expect(config.getAll.notCalled).to.be.true;
     });
 
     it('succeeds when user has all required permissions', async () => {
@@ -281,7 +281,7 @@ describe('Auth', () => {
 
       chai.expect(result).to.deep.equal(userCtx);
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.getAll).to.have.been.calledOnceWithExactly();
+      chai.expect(config.getAll.notCalled).to.be.true;
     });
 
     it('succeeds for admin user regardless of permissions', async () => {
@@ -301,7 +301,7 @@ describe('Auth', () => {
 
       chai.expect(result).to.deep.equal(userCtx);
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.getAll).to.have.been.calledOnceWithExactly();
+      chai.expect(config.getAll.notCalled).to.be.true;
     });
 
     it('throws PermissionError when user lacks all required permissions', async () => {
@@ -341,7 +341,7 @@ describe('Auth', () => {
         .to.be.rejectedWith(PermissionError, 'Insufficient privileges');
 
       chai.expect(request.get.calledOnceWithExactly(requestOptions)).to.be.true;
-      chai.expect(config.getAll).to.have.been.calledOnceWithExactly();
+      chai.expect(config.getAll.notCalled).to.be.true;
     });
   });
 });
