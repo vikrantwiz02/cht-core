@@ -2,17 +2,25 @@ const expect = require('chai').expect;
 const auth = require('../src/auth');
 const { DB_ADMIN_ROLES } = require('@medic/constants');
 
+const makeCtx = settings => ({ settings: { getAll: () => settings } });
+const hasPermissions = (permissions, userRoles, settings, chtPermissionsSettings) => auth.hasPermissions(
+  makeCtx(settings)
+)(permissions, userRoles, chtPermissionsSettings);
+const hasAnyPermission = (permissionsGroupList, userRoles, settings, chtPermissionsSettings) => auth.hasAnyPermission(
+  makeCtx(settings)
+)(permissionsGroupList, userRoles, chtPermissionsSettings);
+
 describe('CHT Script API - Auth', () => {
   describe('hasPermissions', () => {
     it('should return false when no roles and no permissions configured in CHT-Core settings', () => {
-      const resultPermissionsNull = auth.hasPermissions(
+      const resultPermissionsNull = hasPermissions(
         'can_edit', [ 'chw' ], { permissions: null, rolls: { chw: { } } }
       );
-      const resultPermissionsEmpty = auth.hasPermissions(
+      const resultPermissionsEmpty = hasPermissions(
         'can_edit', [ 'chw' ], { permissions: { }, roles: { chw: { } } }
       );
-      const resultRolesNull = auth.hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
-      const resultRolesEmpty = auth.hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesNull = hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesEmpty = hasPermissions('can_edit', null, { permissions: { can_edit: [ 'chw' ] } });
 
       expect(resultPermissionsNull).to.be.false;
       expect(resultPermissionsEmpty).to.be.false;
@@ -22,9 +30,9 @@ describe('CHT Script API - Auth', () => {
 
     it('should return false when permissions parameter is empty', () => {
       const settings = { permissions: { can_edit: [ 'chw' ] }, roles: { chw: { } } };
-      const resultNoPermissions = auth.hasPermissions(null, [ 'chw' ], settings);
-      const resultEmptyString = auth.hasPermissions('', [ 'chw' ], settings);
-      const resultEmptyArray = auth.hasPermissions([], [ 'chw' ], settings);
+      const resultNoPermissions = hasPermissions(null, [ 'chw' ], settings);
+      const resultEmptyString = hasPermissions('', [ 'chw' ], settings);
+      const resultEmptyArray = hasPermissions([], [ 'chw' ], settings);
 
       expect(resultNoPermissions).to.be.false;
       expect(resultEmptyArray).to.be.false;
@@ -41,7 +49,7 @@ describe('CHT Script API - Auth', () => {
       };
       const userRoles = [ 'chw_supervisor', 'gateway' ];
 
-      const result = auth.hasPermissions('can_edit', userRoles, settings);
+      const result = hasPermissions('can_edit', userRoles, settings);
 
       expect(result).to.be.true;
     });
@@ -56,7 +64,7 @@ describe('CHT Script API - Auth', () => {
       };
       const userRoles = [ 'chw_supervisor', 'gateway' ];
 
-      const result = auth.hasPermissions('can_configure', userRoles, settings);
+      const result = hasPermissions('can_configure', userRoles, settings);
 
       expect(result).to.be.false;
     });
@@ -70,7 +78,7 @@ describe('CHT Script API - Auth', () => {
           }
         };
 
-        const result = auth.hasPermissions('can_create_people', [adminRole], settings);
+        const result = hasPermissions('can_create_people', [adminRole], settings);
 
         expect(result).to.be.true;
       });
@@ -86,7 +94,7 @@ describe('CHT Script API - Auth', () => {
       };
       const userRoles = [ 'chw_supervisor' ];
 
-      const result = auth.hasPermissions('can_configure', userRoles, settings);
+      const result = hasPermissions('can_configure', userRoles, settings);
 
       expect(result).to.be.false;
     });
@@ -106,7 +114,7 @@ describe('CHT Script API - Auth', () => {
       };
       const userRoles = [ 'analytics', 'gateway', 'chw' ];
 
-      const result = auth.hasPermissions(
+      const result = hasPermissions(
         [ 'can_access_gateway_api', 'can_view_analytics', 'can_view_contacts' ],
         userRoles,
         settings
@@ -124,7 +132,7 @@ describe('CHT Script API - Auth', () => {
         roles: { national_admin: {}, district_admin: {}, analytics: {} }
       };
 
-      const result = auth.hasPermissions([ 'xyz' ], [ 'district_admin' ], settings);
+      const result = hasPermissions([ 'xyz' ], [ 'district_admin' ], settings);
 
       expect(result).to.be.false;
     });
@@ -138,7 +146,7 @@ describe('CHT Script API - Auth', () => {
         roles: { national_admin: {}, district_admin: {}, analytics: {} }
       };
 
-      const result = auth.hasPermissions([ '!xyz' ], [ 'district_admin' ], settings);
+      const result = hasPermissions([ '!xyz' ], [ 'district_admin' ], settings);
 
       expect(result).to.be.true;
     });
@@ -153,7 +161,7 @@ describe('CHT Script API - Auth', () => {
         roles: { national_admin: {}, district_admin: {}, analytics: {} }
       };
 
-      const result = auth.hasPermissions([ 'can_backup_facilities', 'can_export_messages' ], userRoles, settings);
+      const result = hasPermissions([ 'can_backup_facilities', 'can_export_messages' ], userRoles, settings);
 
       expect(result).to.be.false;
     });
@@ -168,7 +176,7 @@ describe('CHT Script API - Auth', () => {
         roles: { analytics: {}, national_admin: {}, district_admin: {} }
       };
 
-      const result = auth.hasPermissions([ 'can_backup_facilities', 'can_export_messages' ], userRoles, settings);
+      const result = hasPermissions([ 'can_backup_facilities', 'can_export_messages' ], userRoles, settings);
 
       expect(result).to.be.true;
     });
@@ -182,7 +190,7 @@ describe('CHT Script API - Auth', () => {
           }
         };
 
-        const result = auth.hasPermissions([ '!can_backup_facilities' ], [adminRole], settings);
+        const result = hasPermissions([ '!can_backup_facilities' ], [adminRole], settings);
 
         expect(result).to.be.false;
       });
@@ -197,7 +205,7 @@ describe('CHT Script API - Auth', () => {
         roles: { national_admin: {}, district_admin: {}, analytics: {} }
       };
 
-      const result = auth.hasPermissions(
+      const result = hasPermissions(
         [ '!can_backup_facilities', '!can_export_messages' ],
         [ 'analytics' ],
         settings
@@ -215,7 +223,7 @@ describe('CHT Script API - Auth', () => {
         roles: { national_admin: {}, district_admin: {}, analytics: {} }
       };
 
-      const result = auth.hasPermissions(
+      const result = hasPermissions(
         [ '!can_backup_facilities', 'can_export_messages' ],
         [ 'analytics' ],
         settings
@@ -232,7 +240,7 @@ describe('CHT Script API - Auth', () => {
       // User still has 'chw_supervisor' in their profile, but the role is no longer in app_settings.roles
       const userRoles = [ 'chw_supervisor' ];
 
-      const result = auth.hasPermissions('can_edit', userRoles, settings);
+      const result = hasPermissions('can_edit', userRoles, settings);
 
       expect(result).to.be.false;
     });
@@ -245,7 +253,7 @@ describe('CHT Script API - Auth', () => {
       // User has both 'chw_supervisor' (deleted) and 'chw' (still configured)
       const userRoles = [ 'chw_supervisor', 'chw' ];
 
-      const result = auth.hasPermissions('can_edit', userRoles, settings);
+      const result = hasPermissions('can_edit', userRoles, settings);
 
       expect(result).to.be.true;
     });
@@ -262,7 +270,7 @@ describe('CHT Script API - Auth', () => {
         const userRoles = [ 'chw_supervisor' ];
 
         // Restrictive: when no roles configured, non-admin users get no permissions
-        const result = auth.hasPermissions('can_edit', userRoles, settings);
+        const result = hasPermissions('can_edit', userRoles, settings);
 
         expect(result).to.be.false;
       });
@@ -271,14 +279,14 @@ describe('CHT Script API - Auth', () => {
 
   describe('hasAnyPermission', () => {
     it('should return false when no roles and no permissions configured in CHT-Core settings', () => {
-      const resultPermissionsNull = auth.hasAnyPermission(
+      const resultPermissionsNull = hasAnyPermission(
         [ [ 'can_edit' ] ], [ 'chw' ], { permissions: null, roles: { chw: { } } }
       );
-      const resultPermissionsEmpty = auth.hasAnyPermission(
+      const resultPermissionsEmpty = hasAnyPermission(
         [ [ 'can_edit' ] ], [ 'chw' ], { permissions: {}, roles: { chw: { } } }
       );
-      const resultRolesNull = auth.hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
-      const resultRolesEmpty = auth.hasAnyPermission([ [ 'can_edit' ] ], [], { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesNull = hasAnyPermission([ [ 'can_edit' ] ], null, { permissions: { can_edit: [ 'chw' ] } });
+      const resultRolesEmpty = hasAnyPermission([ [ 'can_edit' ] ], [], { permissions: { can_edit: [ 'chw' ] } });
 
       expect(resultPermissionsNull).to.be.false;
       expect(resultPermissionsEmpty).to.be.false;
@@ -288,10 +296,10 @@ describe('CHT Script API - Auth', () => {
 
     it('should return false when permissionsGroupList parameter is empty', () => {
       const settings = { permissions: { can_edit: [ 'chw' ] }, roles: { chw: { } } };
-      const resultNoPermissions = auth.hasAnyPermission(null, [ 'chw' ], settings);
-      const resultEmptyArray = auth.hasAnyPermission([], [ 'chw' ], settings);
-      const resultListWrongType = auth.hasAnyPermission('can_edit', [ 'chw' ], settings);
-      const resultGroupWrongType = auth.hasAnyPermission([ 'can_edit' ], [ 'chw' ], settings);
+      const resultNoPermissions = hasAnyPermission(null, [ 'chw' ], settings);
+      const resultEmptyArray = hasAnyPermission([], [ 'chw' ], settings);
+      const resultListWrongType = hasAnyPermission('can_edit', [ 'chw' ], settings);
+      const resultGroupWrongType = hasAnyPermission([ 'can_edit' ], [ 'chw' ], settings);
 
       expect(resultNoPermissions).to.be.false;
       expect(resultEmptyArray).to.be.false;
@@ -309,7 +317,7 @@ describe('CHT Script API - Auth', () => {
           }
         };
 
-        const result = auth.hasAnyPermission(
+        const result = hasAnyPermission(
           [[ 'can_backup_facilities' ], [ 'can_export_messages' ], [ 'some_permission' ]],
           [adminRole],
           settings
@@ -327,7 +335,7 @@ describe('CHT Script API - Auth', () => {
           }
         };
 
-        const result = auth.hasAnyPermission(
+        const result = hasAnyPermission(
           [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ 'some_permission' ]],
           [adminRole],
           settings
@@ -345,7 +353,7 @@ describe('CHT Script API - Auth', () => {
           }
         };
 
-        const result = auth.hasAnyPermission(
+        const result = hasAnyPermission(
           [[ '!can_backup_facilities' ], [ '!can_export_messages' ], [ '!some_permission' ]],
           [adminRole],
           settings
@@ -372,7 +380,7 @@ describe('CHT Script API - Auth', () => {
         [ 'can_add_people', 'can_add_places' ],
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.true;
     });
@@ -391,7 +399,7 @@ describe('CHT Script API - Auth', () => {
         [ 'can_add_people', 'can_add_places' ]
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.true;
     });
@@ -415,7 +423,7 @@ describe('CHT Script API - Auth', () => {
         [ 'can_backup_facilities', 'can_backup_people' ]
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, userRoles, settings);
+      const result = hasAnyPermission(anyPermissions, userRoles, settings);
 
       expect(result).to.be.true;
     });
@@ -434,7 +442,7 @@ describe('CHT Script API - Auth', () => {
         [ 'can_add_people', 'can_add_places' ]
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.false;
     });
@@ -457,7 +465,7 @@ describe('CHT Script API - Auth', () => {
         ['can_add_people', '!random3']
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.true;
     });
@@ -480,7 +488,7 @@ describe('CHT Script API - Auth', () => {
         ['can_backup_people', '!can_add_places']
       ];
 
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.true;
     });
@@ -502,7 +510,7 @@ describe('CHT Script API - Auth', () => {
         [ 'can_backup_people', '!random2' ],
         [ 'can_backup_places', '!random3' ]
       ];
-      const result = auth.hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
+      const result = hasAnyPermission(anyPermissions, [ 'district_admin' ], settings);
 
       expect(result).to.be.false;
     });
@@ -515,7 +523,7 @@ describe('CHT Script API - Auth', () => {
       // User still has 'chw_supervisor' in their profile, but the role is no longer in app_settings.roles
       const userRoles = [ 'chw_supervisor' ];
 
-      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
+      const result = hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
 
       expect(result).to.be.false;
     });
@@ -528,7 +536,57 @@ describe('CHT Script API - Auth', () => {
       // User has 'chw_supervisor' (deleted) and 'chw' (configured), 'chw' grants can_view
       const userRoles = [ 'chw_supervisor', 'chw' ];
 
-      const result = auth.hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
+      const result = hasAnyPermission([ [ 'can_edit' ], [ 'can_view' ] ], userRoles, settings);
+
+      expect(result).to.be.true;
+    });
+  });
+
+  describe('chtPermissionsSettings override', () => {
+    it('hasPermissions uses the override when provided', () => {
+      const ctxSettings = {
+        permissions: { can_edit: [ 'chw' ] },
+        roles: { chw: {}, chw_supervisor: {} }
+      };
+      const override = { can_edit: [ 'chw_supervisor' ] };
+
+      const result = auth.hasPermissions(makeCtx(ctxSettings))('can_edit', [ 'chw_supervisor' ], override);
+
+      expect(result).to.be.true;
+    });
+
+    it('hasPermissions falls back to ctx settings.permissions when override is not provided', () => {
+      const ctxSettings = {
+        permissions: { can_edit: [ 'chw_supervisor' ] },
+        roles: { chw_supervisor: {} }
+      };
+
+      const result = auth.hasPermissions(makeCtx(ctxSettings))('can_edit', [ 'chw_supervisor' ]);
+
+      expect(result).to.be.true;
+    });
+
+    it('hasAnyPermission uses the override when provided', () => {
+      const ctxSettings = {
+        permissions: { can_edit: [ 'chw' ] },
+        roles: { chw: {}, chw_supervisor: {} }
+      };
+      const override = { can_edit: [ 'chw_supervisor' ] };
+
+      const result = auth.hasAnyPermission(makeCtx(ctxSettings))(
+        [[ 'can_edit' ]], [ 'chw_supervisor' ], override
+      );
+
+      expect(result).to.be.true;
+    });
+
+    it('hasAnyPermission falls back to ctx settings.permissions when override is not provided', () => {
+      const ctxSettings = {
+        permissions: { can_edit: [ 'chw_supervisor' ] },
+        roles: { chw_supervisor: {} }
+      };
+
+      const result = auth.hasAnyPermission(makeCtx(ctxSettings))([[ 'can_edit' ]], [ 'chw_supervisor' ]);
 
       expect(result).to.be.true;
     });

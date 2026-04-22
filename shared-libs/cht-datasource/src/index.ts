@@ -62,8 +62,31 @@ export const getDatasource = (ctx: DataContext) => {
   assertDataContext(ctx);
   return {
     v1: {
-      hasPermissions,
-      hasAnyPermission,
+      /**
+       * Verify if the user's role has the permission(s).
+       * @param permissions permission(s) to verify
+       * @param userRoles array of user roles
+       * @param chtPermissionsSettings optional override for the permissions config. When omitted, falls back to the
+       * permissions from the data context's settings service.
+       */
+      hasPermissions: (
+        permissions: string | string[],
+        userRoles: string[],
+        chtPermissionsSettings?: Record<string, string[]>
+      ) => ctx.bind(hasPermissions)(permissions, userRoles, chtPermissionsSettings),
+
+      /**
+       * Verify if the user's role has all the permissions of any of the provided groups.
+       * @param permissionsGroupList array of groups of permissions
+       * @param userRoles array of user roles
+       * @param chtPermissionsSettings optional override for the permissions config. When omitted, falls back to the
+       * permissions from the data context's settings service.
+       */
+      hasAnyPermission: (
+        permissionsGroupList: string[][],
+        userRoles: string[],
+        chtPermissionsSettings?: Record<string, string[]>
+      ) => ctx.bind(hasAnyPermission)(permissionsGroupList, userRoles, chtPermissionsSettings),
       contact: {
         /**
          * Returns a contact by their UUID.
