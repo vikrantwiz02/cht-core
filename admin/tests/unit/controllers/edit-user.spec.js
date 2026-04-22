@@ -26,12 +26,15 @@ describe('EditUserCtrl controller', () => {
 
     getContact = sinon.stub();
     hasPermissions = sinon.stub();
-    const dataSource = { v1: { hasPermissions } };
+    const dataSource = {
+      v1: {
+        hasPermissions,
+        contact: { getByUuid: getContact }
+      }
+    };
     const dataContext = {
-      bind: sinon.stub(),
       getDatasource: sinon.stub().returns(dataSource)
     };
-    dataContext.bind.returns(getContact);
     dbAllDocs = sinon.stub();
     UpdateUser = sinon.stub().resolves();
     CreateUser = {
@@ -83,7 +86,7 @@ describe('EditUserCtrl controller', () => {
           allDocs: dbAllDocs,
         })
       );
-      $provide.value('DataContext', dataContext);
+      $provide.value('DataContext', Promise.resolve(dataContext));
       $provide.value('UpdateUser', UpdateUser);
       $provide.value('CreateUser', CreateUser);
       $provide.value('UserSettings', UserSettings);
@@ -297,7 +300,7 @@ describe('EditUserCtrl controller', () => {
         })
         .then(() => {
           chai.expect(UpdateUser.called).to.equal(false);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -314,7 +317,7 @@ describe('EditUserCtrl controller', () => {
         })
         .then(() => {
           chai.expect(UpdateUser.called).to.equal(false);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -397,7 +400,7 @@ describe('EditUserCtrl controller', () => {
         })
         .then(() => {
           chai.expect(scope.errors.contact).to.equal('outside');
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -464,7 +467,7 @@ describe('EditUserCtrl controller', () => {
               contact_id: scope.editUserModel.contact
             }}
           ]);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -560,7 +563,7 @@ describe('EditUserCtrl controller', () => {
               }
             ]
           ]);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -580,7 +583,7 @@ describe('EditUserCtrl controller', () => {
           const updateUserArgs = UpdateUser.getCall(0).args;
           chai.expect(updateUserArgs[0]).to.equal('user.name');
           chai.expect(updateUserArgs[1].roles).to.deep.equal([ 'aardvark', 'supervisor', 'zesty' ]);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -632,7 +635,7 @@ describe('EditUserCtrl controller', () => {
               password: 'medic.1234'
             }
           ]);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 
@@ -679,7 +682,7 @@ describe('EditUserCtrl controller', () => {
             'translation result',
             'warning'
           ]);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'new_contact_id' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('new_contact_id')).to.be.true;
         });
     });
 
@@ -735,8 +738,8 @@ describe('EditUserCtrl controller', () => {
           chai.expect(updates.roles).to.deep.equal(scope.editUserModel.roles);
           chai.expect(updates.password).to.deep.equal(scope.editUserModel.password);
           chai.expect(getContact.args).to.deep.equal([
-            [{ uuid: 'new_contact_id' }],
-            [{ uuid: 'new_contact_id' }]
+            ['new_contact_id'],
+            ['new_contact_id']
           ]);
         });
     });
@@ -1104,7 +1107,7 @@ describe('EditUserCtrl controller', () => {
         })
         .then(() => {
           chai.expect(UpdateUser.called).to.equal(false);
-          chai.expect(getContact.calledOnceWithExactly({ uuid: 'xyz' })).to.be.true;
+          chai.expect(getContact.calledOnceWithExactly('xyz')).to.be.true;
         });
     });
 

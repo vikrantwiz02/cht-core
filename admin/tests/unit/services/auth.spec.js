@@ -12,7 +12,7 @@ describe('Auth service', function() {
   beforeEach(function () {
     module('adminApp');
     userCtx = sinon.stub();
-    Settings = sinon.stub();
+    Settings = sinon.stub().resolves({});
     isOnlineOnly = sinon.stub();
     module(function ($provide) {
       $provide.factory('Session', function() {
@@ -21,6 +21,7 @@ describe('Auth service', function() {
       $provide.factory('Settings', function() {
         return Settings;
       });
+      $provide.value('Changes', sinon.stub());
     });
     inject(function($injector) {
       service = $injector.get('Auth');

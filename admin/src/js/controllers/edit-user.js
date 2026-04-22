@@ -1,7 +1,6 @@
 const moment = require('moment');
 const passwordTester = require('simple-password-tester');
 const phoneNumber = require('@medic/phone-number');
-const CHT = require('@medic/cht-datasource');
 const constants = require('@medic/constants');
 const USER_ROLES = constants.USER_ROLES;
 const PASSWORD_MINIMUM_LENGTH = 8;
@@ -40,9 +39,8 @@ angular
     'use strict';
     'ngInject';
 
-    const datasource = DataContext.getDatasource();
+    const datasourcePromise = DataContext.then(dataContext => dataContext.getDatasource());
     $scope.cancel = () => $uibModalInstance.dismiss();
-    const getContact = DataContext.bind(CHT.Contact.v1.get);
 
     const getRoles = roles => {
       if (!roles || !roles.length) {
@@ -61,7 +59,7 @@ angular
       });
     };
 
-    const validateSkipPasswordPermission = () => {
+    const validateSkipPasswordPermission = datasource => {
       $scope.skipPasswordChange = datasource.v1.hasPermissions(
         ['can_skip_password_change'],
         $scope.editUserModel.roles,
@@ -179,10 +177,10 @@ angular
         .map((row) => row.doc);
     };
 
-    this.setupPromise = determineEditUserModel()
-      .then(model => {
+    this.setupPromise = $q.all([determineEditUserModel(), datasourcePromise])
+      .then(([model, datasource]) => {
         $scope.editUserModel = model;
-        validateSkipPasswordPermission();
+        validateSkipPasswordPermission(datasource);
         populateFacilitynContact();
       })
       .catch(err => {
@@ -326,7 +324,7 @@ angular
       return true;
     };
 
-    const validatePlacesPermission = () => {
+    const validatePlacesPermission = datasource => {
       if (!$scope.editUserModel.place || $scope.editUserModel.place.length <= 1) {
         return true;
       }
@@ -392,16 +390,16 @@ angular
         });
     };
 
-    const validateContactIsInPlace = () => {
+    const validateContactIsInPlace = datasource => {
       const placeIds = $scope.editUserModel.place;
       const contactId = $scope.editUserModel.contact;
       if (!placeIds || !contactId) {
         return $q.resolve(true);
       }
 
-      const getParent = (contactId) => {
-        return getContact(CHT.Qualifier.byUuid(contactId)).then(contact => contact.parent);
-      };
+      const getParent = contactId => datasource.v1.contact
+        .getByUuid(contactId)
+        .then(contact => contact.parent);
 
       const checkParent = (parent, placeIds) => {
         if (!parent) {
@@ -588,33 +586,26 @@ angular
       'password' ? 'text' : 'password';
     };
 
-    // #edit-user-profile is the admin view, which has additional fields.
-    $scope.editUser = () => {
-      $scope.setProcessing();
-      $scope.errors = {};
-      computeFields();
-
+    const runValidations = datasource => {
       const synchronousValidations = validateName() &&
                                      validateRole() &&
                                      validateContactAndFacility() &&
                                      validatePasswordForEditUser() &&
                                      validateEmailAddress() &&
-                                     validatePlacesPermission();
+                                     validatePlacesPermission(datasource);
 
       if (!synchronousValidations) {
         $scope.setError();
         return;
       }
 
-      const asynchronousValidations = $q
+      return $q
         .all([
           validateFacilityHierarchy(),
-          validateContactIsInPlace(),
+          validateContactIsInPlace(datasource),
           validateTokenLogin(),
         ])
-        .then(responses => responses.every(response => response));
-
-      return asynchronousValidations
+        .then(responses => responses.every(response => response))
         .then(valid => {
           if (!valid) {
             $scope.setError();
@@ -622,7 +613,17 @@ angular
           }
 
           return validateReplicationLimit().then(() => updateUser());
-        })
+        });
+    };
+
+    // #edit-user-profile is the admin view, which has additional fields.
+    $scope.editUser = () => {
+      $scope.setProcessing();
+      $scope.errors = {};
+      computeFields();
+
+      return datasourcePromise
+        .then(runValidations)
         .catch(err => {
           if (err.key) {
             $translate(err.key, err.params).then(value => $scope.setError(err, value, err.severity));
