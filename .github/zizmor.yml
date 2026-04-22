@@ -38,7 +38,7 @@ rules:
       # publish-generated-docs uses personal_token (PAT) not GITHUB_TOKEN, and
       # only runs on non-PR events with an additional master-branch guard on the
       # deploy step. Risk accepted: 2026-04-22.
-      - .github/workflows/build.yml:publish-generated-docs
+      - .github/workflows/build.yml
 
   dependabot-cooldown:
     config:
