@@ -63,7 +63,7 @@ describe('messageUtils', () => {
                 phone: parentPhone
               },
               parent: {
-                type: 'district_hospital',
+                type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: grandparentPhone
                 }
@@ -94,7 +94,7 @@ describe('messageUtils', () => {
                 phone: `not${parentPhone}`,
               },
               parent: {
-                type: 'district_hospital',
+                type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: `not${grandparentPhone}`,
                 },
@@ -115,7 +115,7 @@ describe('messageUtils', () => {
                 phone: parentPhone,
               },
               parent: {
-                type: 'district_hospital',
+                type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: grandparentPhone,
                 },
@@ -146,7 +146,7 @@ describe('messageUtils', () => {
                 phone: `not${parentPhone}`,
               },
               parent: {
-                type: 'district_hospital',
+                type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: `not${grandparentPhone}`,
                 },
@@ -167,7 +167,7 @@ describe('messageUtils', () => {
                 phone: parentPhone,
               },
               parent: {
-                type: 'district_hospital',
+                type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: grandparentPhone,
                 },
@@ -200,7 +200,7 @@ describe('messageUtils', () => {
               },
               parent: {
                 type: 'contact',
-                contact_type: 'district_hospital',
+                contact_type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: grandparentPhone
                 }
@@ -232,7 +232,7 @@ describe('messageUtils', () => {
               },
               parent: {
                 type: 'contact',
-                contact_type: 'district_hospital',
+                contact_type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                 contact: {
                   phone: grandparentPhone
                 }
@@ -856,7 +856,7 @@ describe('messageUtils', () => {
           contact: {
             type: 'person',
             parent: {
-              type: 'district_hospital',
+              type: CONTACT_TYPES.DISTRICT_HOSPITAL,
               contact: {
                 type: 'person',
                 phone: '+222'
@@ -873,7 +873,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER,
                 parent: {
-                  type: 'district_hospital',
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                   contact: {
                     type: 'person',
                     phone: '+333'
@@ -908,7 +908,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER,
                 parent: {
-                  type: 'district_hospital',
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                   contact: {
                     type: 'person',
                     phone: '+333'
@@ -943,7 +943,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER, //parent
                 parent: {
-                  type: 'district_hospital', //grandparent
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL, //grandparent
                   contact: {
                     type: 'person',
                     phone: '+333'
@@ -974,7 +974,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER,
                 parent: {
-                  type: 'district_hospital',
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                   contact: {
                     type: 'person',
                     phone: '+333'
@@ -1009,7 +1009,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER,
                 parent: {
-                  type: 'district_hospital',
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                   contact: {
                     type: 'person'
                   }
@@ -1046,7 +1046,7 @@ describe('messageUtils', () => {
               parent: {
                 type: CONTACT_TYPES.HEALTH_CENTER,
                 parent: {
-                  type: 'district_hospital',
+                  type: CONTACT_TYPES.DISTRICT_HOSPITAL,
                   contact: {
                     type: 'person'
                   }
@@ -1406,7 +1406,7 @@ describe('messageUtils', () => {
           parent: {
             type: CONTACT_TYPES.HEALTH_CENTER,
             parent: {
-              type: 'district_hospital',
+              type: CONTACT_TYPES.DISTRICT_HOSPITAL,
               parent: ''
             }
           }
@@ -1670,7 +1670,7 @@ describe('messageUtils', () => {
         from: '+111',
         place: {
           parent: {
-            type: 'district_hospital',
+            type: CONTACT_TYPES.DISTRICT_HOSPITAL,
             contact: { phone: '+888' }
           }
         }
