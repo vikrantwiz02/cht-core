@@ -14,7 +14,7 @@
 
 'use strict';
 
-const { execSync } = require('node:child_process');
+const { execFileSync } = require('node:child_process');
 const fs            = require('node:fs');
 const os            = require('node:os');
 const path          = require('node:path');
@@ -133,7 +133,7 @@ try {
 
     let flagged;
     try {
-      execSync(`"${SECRETLINT}" --secretlintrc "${SECRETLINTRC}" "${logFile}"`, { stdio: 'pipe' });
+      execFileSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
       flagged = false;
     } catch {
       flagged = true;
