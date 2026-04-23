@@ -39,7 +39,7 @@
     "integration-all-k3d-local": "export VERSION=$(node ./scripts/build/get-version.js) && ./scripts/build/build-service-images.sh && npm run ci-integration-all-k3d",
     "integration-sentinel-k3d-local": "export VERSION=$(node ./scripts/build/get-version.js) && ./scripts/build/build-service-images.sh && npm run ci-integration-sentinel-k3d",
     "integration-cht-form": "wdio run ./tests/integration/cht-form/wdio.conf.js",
-    "lint": "eslint --color --cache . && ./scripts/build/blank-link-check.sh && npm run lint-shell",
+    "lint": "eslint --color --cache . && ./scripts/build/blank-link-check.sh && npm run lint-shell && node scripts/ci/test-secretlintrc.js",
     "lint-shell": "shellcheck $(./scripts/ci/list-shellscripts.sh)",
     "lint-translations": "node scripts/ci/lint-translations.js",
     "test": "npm run lint && npm run unit && npm run integration-api",
