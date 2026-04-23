@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(ts|html|js\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|html\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|js|json\\)$\")",
+      "Bash(grep -E \"\\\\.\\(js|json\\)$\")",
+      "Bash(npm show *)",
+      "Bash(python3 -c ' *)",
+      "Read(//private/var/folders/cg/8stdxw312n7cznb624g4g08c0000gn/T/tmp.DCweytw0Vn/**)",
+      "Bash(npx --no-install secretlint --debug \"tests/logs/api.log\")",
+      "Bash(echo \"exit: $?\")",
+      "Read(//var/folders/cg/8stdxw312n7cznb624g4g08c0000gn/T/tmp.DCweytw0Vn/node_modules/@secretlint/secretlint-rule-basicauth/module/**)",
+      "Read(//private/var/folders/cg/8stdxw312n7cznb624g4g08c0000gn/T/tmp.DCweytw0Vn/node_modules/@secretlint/secretlint-rule-basicauth/module/**)",
+      "Read(//var/folders/cg/8stdxw312n7cznb624g4g08c0000gn/T/tmp.DCweytw0Vn/node_modules/@secretlint/secretlint-rule-pattern/module/**)",
+      "Read(//private/var/folders/cg/8stdxw312n7cznb624g4g08c0000gn/T/tmp.DCweytw0Vn/node_modules/@secretlint/secretlint-rule-pattern/module/**)",
+      "Bash(node scripts/ci/test-secretlintrc.js)"
+    ]
+  }
+}
