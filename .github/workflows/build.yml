@@ -382,10 +382,11 @@ jobs:
       run: |
         [[ "${{ matrix.cmd }}" == ci-webdriver* || "${{ matrix.cmd }}" == wdio* ]] || exit 0
         compgen -G "tests/logs/*.log" > /dev/null || exit 0
+        PATTERN='ERROR:|^\s+at .*\.js:[0-9]+'
         ALLOWED='Error loading translations|Invalid basic auth|Unhandled rejection|connect ECONNREFUSED|STARTUP RES|processChange failed|errored on doc|connecting to upgrade service|TCPConnectWrap|internalConnectMultiple|afterConnectMultiple|callbackTrampoline|Error while logging in with token|error saving changes on doc|Error when persisting log|No RapidPro URL|No api key configured|Empty response received when sending|Error: 429'
-        if grep -rhn '\bERROR:' tests/logs/*.log | grep -qvE "$ALLOWED"; then
-          grep -rhn '\bERROR:' tests/logs/*.log | grep -vE "$ALLOWED"
-          echo "::error::Unexpected ERROR lines in logs. Add expected patterns to ALLOWED in build.yml if intentional."
+        if grep -rhnE "$PATTERN" tests/logs/*.log | grep -qvE "$ALLOWED"; then
+          grep -rhnE "$PATTERN" tests/logs/*.log | grep -vE "$ALLOWED"
+          echo "::error::Unexpected ERROR/stack lines in logs. Add expected patterns to ALLOWED in build.yml if intentional."
           exit 1
         fi
 
