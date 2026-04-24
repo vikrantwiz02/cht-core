@@ -94,7 +94,7 @@
           </li>
 
           <ng-container *ngFor="let ext of uiExtensionOptions">
-            <li role="presentation">
+            <li>
               <a role="menuitem" tabindex="-1" [routerLink]="ext.routerLink">
                 <span *ngIf="ext.resourceIcon" [innerHTML]="ext.resourceIcon | resourceIcon"></span>
                 <i *ngIf="!ext.resourceIcon && ext.icon" class="fa fa-fw {{ext.icon}}"></i>
@@ -103,7 +103,7 @@
             </li>
           </ng-container>
 
-          <li role="separator" class="divider"></li>
+          <li class="divider"><hr></li>
 
           <li role="presentation">
             <a routerLink="trainings" role="menuitem" tabindex="-1">
