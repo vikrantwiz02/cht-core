@@ -1,6 +1,6 @@
 'use strict';
 
-const { execFileSync } = require('node:child_process');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -14,12 +14,8 @@ const runSecretlint = (line) => {
   try {
     const logFile = path.join(tmpDir, 'test.log');
     fs.writeFileSync(logFile, line + '\n', 'utf8');
-    try {
-      execFileSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
-      return false;
-    } catch (err) { // eslint-disable-line no-unused-vars
-      return true;
-    }
+    const result = spawnSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
+    return result.status !== 0;
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
