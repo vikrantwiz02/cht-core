@@ -17,7 +17,7 @@ const runSecretlint = (line) => {
     try {
       execFileSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
       return false;
-    } catch (_err) {
+    } catch (err) { // eslint-disable-line no-unused-vars
       return true;
     }
   } finally {
