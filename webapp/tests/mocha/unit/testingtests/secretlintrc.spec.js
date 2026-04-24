@@ -17,7 +17,7 @@ const runSecretlint = (line) => {
     try {
       execFileSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
       return false;
-    } catch {
+    } catch (_err) {
       return true;
     }
   } finally {
