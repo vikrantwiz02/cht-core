@@ -12,6 +12,7 @@ import { ModalService } from '@mm-services/modal.service';
 import { StorageInfoService } from '@mm-services/storage-info.service';
 import { SettingsService } from '@mm-services/settings.service';
 import { HeaderTabsService } from '@mm-services/header-tabs.service';
+import { UiExtensionsService } from '@mm-services/ui-extensions.service';
 import { CustomResourceService } from '@mm-services/custom-resource.service';
 import { ChangesService } from '@mm-services/changes.service';
 import { Selectors } from '@mm-selectors/index';
@@ -25,6 +26,7 @@ describe('Header Component', () => {
   let storageInfoService;
   let settingsService;
   let headerTabsService;
+  let uiExtensionsService;
   let customResourceService;
   let changesService;
 
@@ -43,6 +45,9 @@ describe('Header Component', () => {
         { name: 'tasks', defaultIcon: 'fa-flag', typeName: 'task' },
         { name: 'reports', defaultIcon: 'fa-list-alt', typeName: 'report' },
       ])
+    };
+    uiExtensionsService = {
+      getPropertiesByType: sinon.stub().resolves([]),
     };
     customResourceService = {
       getAppTitle: sinon.stub().resolves('App Title'),
@@ -74,6 +79,7 @@ describe('Header Component', () => {
           { provide: StorageInfoService, useValue: storageInfoService },
           { provide: SettingsService, useValue: settingsService },
           { provide: HeaderTabsService, useValue: headerTabsService },
+          { provide: UiExtensionsService, useValue: uiExtensionsService },
           { provide: CustomResourceService, useValue: customResourceService },
           { provide: ChangesService, useValue: changesService },
         ]
@@ -185,6 +191,68 @@ describe('Header Component', () => {
     component.ngOnDestroy();
 
     expect(unsubscribeSpy.callCount).to.equal(1);
+  });
+
+  describe('UI extension options', () => {
+    it('should initialize uiExtensionOptions as empty array', () => {
+      fixture.detectChanges();
+      expect(component.uiExtensionOptions).to.deep.equal([]);
+    });
+
+    it('should load app_drawer_tab extensions and map them to menu options', async () => {
+      uiExtensionsService.getPropertiesByType.resolves([
+        { id: 'ext1', type: 'app_drawer_tab', title: 'Hello Extension', resource_icon: 'hello-icon' },
+      ]);
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(uiExtensionsService.getPropertiesByType.calledWith('app_drawer_tab')).to.be.true;
+      expect(component.uiExtensionOptions).to.have.length(1);
+      expect(component.uiExtensionOptions[0]).to.deep.include({
+        routerLink: 'ui-extensions/ext1',
+        translationKey: 'Hello Extension',
+        resourceIcon: 'hello-icon',
+      });
+    });
+
+    it('should map icon property for font-awesome icons', async () => {
+      uiExtensionsService.getPropertiesByType.resolves([
+        { id: 'ext2', type: 'app_drawer_tab', title: 'FA Extension', icon: 'fa-star' },
+      ]);
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.uiExtensionOptions[0]).to.deep.include({
+        routerLink: 'ui-extensions/ext2',
+        translationKey: 'FA Extension',
+        icon: 'fa-star',
+      });
+      expect(component.uiExtensionOptions[0].resourceIcon).to.be.undefined;
+    });
+
+    it('should filter out extensions without a title', async () => {
+      uiExtensionsService.getPropertiesByType.resolves([
+        { id: 'no-title', type: 'app_drawer_tab', resource_icon: 'some-icon' },
+        { id: 'has-title', type: 'app_drawer_tab', title: 'Visible', resource_icon: 'other-icon' },
+      ]);
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.uiExtensionOptions).to.have.length(1);
+      expect(component.uiExtensionOptions[0].translationKey).to.equal('Visible');
+    });
+
+    it('should handle service returning no app_drawer_tab extensions', async () => {
+      uiExtensionsService.getPropertiesByType.resolves([]);
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.uiExtensionOptions).to.deep.equal([]);
+    });
   });
 
   describe('bubble counter integration', () => {

@@ -9,6 +9,7 @@ interface UiExtensionProperties {
   readonly type: string;
   readonly roles?: string[];
   readonly icon?: string;
+  readonly resource_icon?: string;
   readonly title?: string;
   readonly config?: Record<string, unknown>;
 }
@@ -33,6 +34,9 @@ export class UiExtensionsService {
 
   private async init() {
     if (this.initialized) {
+      return;
+    }
+    if (!this.sessionService.userCtx()) {
       return;
     }
     await this.loadExtensionProperties();

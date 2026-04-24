@@ -143,7 +143,8 @@ export class SidebarMenuComponent extends BaseMenuComponent implements OnInit, O
       .map(ext => ({
         routerLink: `ui-extensions/${ext.id}`,
         translationKey: ext.title!,
-        resourceIcon: ext.icon,
+        resourceIcon: ext.resource_icon,
+        ...(ext.icon && { icon: ext.icon }),
         canDisplay: true,
       }));
   }

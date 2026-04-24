@@ -206,8 +206,8 @@ describe('SidebarMenuComponent', () => {
   describe('UI Extension options (app_drawer_tab)', () => {
     beforeEach(async () => {
       uiExtensionsService.getPropertiesByType.resolves([
-        { id: 'ext-reports', type: 'app_drawer_tab', title: 'custom.reports', icon: 'reports-icon' },
-        { id: 'ext-map', type: 'app_drawer_tab', title: 'custom.map', icon: 'map-icon' },
+        { id: 'ext-reports', type: 'app_drawer_tab', title: 'custom.reports', resource_icon: 'reports-icon' },
+        { id: 'ext-map', type: 'app_drawer_tab', title: 'custom.map', resource_icon: 'map-icon' },
       ]);
 
       await TestBed.resetTestingModule();
@@ -304,5 +304,23 @@ describe('SidebarMenuComponent', () => {
         ['app_drawer_tab'], ['app_drawer_tab'], ['app_drawer_tab']
       ]);
     }));
+
+    describe('when app_drawer_tab extension uses font-awesome icon', () => {
+      beforeEach(async () => {
+        uiExtensionsService.getPropertiesByType.resolves([
+          { id: 'ext-fa', type: 'app_drawer_tab', title: 'FA Extension', icon: 'fa-star' },
+        ]);
+
+        await TestBed.resetTestingModule();
+        await createComponent();
+      });
+
+      it('should map extension icon to icon property and not set resourceIcon', () => {
+        const extOption = component.menuOptions.find(opt => opt.routerLink === 'ui-extensions/ext-fa');
+        expect(extOption?.icon).to.equal('fa-star');
+        expect(extOption?.resourceIcon).to.be.undefined;
+      });
+    });
   });
 });
+

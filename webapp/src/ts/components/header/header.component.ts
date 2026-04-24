@@ -21,6 +21,7 @@ import { LocalizeNumberPipe } from '@mm-pipes/number.pipe';
 import { HeaderLogoPipe, ResourceIconPipe } from '@mm-pipes/resource-icon.pipe';
 
 import { HeaderTab, HeaderTabsService } from '@mm-services/header-tabs.service';
+import { UiExtensionsService } from '@mm-services/ui-extensions.service';
 
 export const OLD_NAV_PERMISSION = 'can_view_old_navigation';
 
@@ -52,6 +53,7 @@ export class HeaderComponent extends BaseMenuComponent implements OnInit, OnDest
   currentTab;
   bubbleCount = {};
   permittedTabs: HeaderTab[] = [];
+  uiExtensionOptions: UiExtMenuOption[] = [];
 
   constructor(
     protected readonly store: Store,
@@ -60,6 +62,7 @@ export class HeaderComponent extends BaseMenuComponent implements OnInit, OnDest
     protected readonly storageInfoService: StorageInfoService,
     private settingsService: SettingsService,
     private headerTabsService: HeaderTabsService,
+    private uiExtensionsService: UiExtensionsService,
   ) {
     super(store, dbSyncService, modalService, storageInfoService);
   }
@@ -68,6 +71,7 @@ export class HeaderComponent extends BaseMenuComponent implements OnInit, OnDest
     super.ngOnInit();
     this.additionalSubscriptions();
     this.getHeaderTabs();
+    this.loadUiExtensionOptions();
   }
 
   ngOnDestroy() {
@@ -100,4 +104,26 @@ export class HeaderComponent extends BaseMenuComponent implements OnInit, OnDest
         this.permittedTabs = permittedTabs;
       });
   }
+
+  private loadUiExtensionOptions() {
+    this.uiExtensionsService
+      .getPropertiesByType('app_drawer_tab')
+      .then(extensions => {
+        this.uiExtensionOptions = extensions
+          .filter(ext => ext.title)
+          .map(ext => ({
+            routerLink: `ui-extensions/${ext.id}`,
+            translationKey: ext.title!,
+            resourceIcon: ext.resource_icon,
+            ...(ext.icon && { icon: ext.icon }),
+          }));
+      });
+  }
+}
+
+interface UiExtMenuOption {
+  routerLink: string;
+  translationKey: string;
+  resourceIcon?: string;
+  icon?: string;
 }
