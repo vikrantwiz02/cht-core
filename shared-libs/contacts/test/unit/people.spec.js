@@ -115,6 +115,26 @@ describe('people controller', () => {
 
   describe('createPerson', () => {
 
+    it('rejects documents with existing _rev', () => {
+      return controller
+        .createPerson({ _id: 'x', _rev: '1-abc', type: 'person', name: 'Test' })
+        .then(() => chai.expect.fail('should not succeed'))
+        .catch(err => {
+          chai.expect(err.code).to.equal(400);
+          chai.expect(err.message).to.equal('Person document already exists.');
+        });
+    });
+
+    it('rejects deletion attempt (_rev + _deleted)', () => {
+      return controller
+        .createPerson({ _id: 'x', _rev: '1-abc', _deleted: true, type: 'person', name: 'Test' })
+        .then(() => chai.expect.fail('should not succeed'))
+        .catch(err => {
+          chai.expect(err.code).to.equal(400);
+          chai.expect(err.message).to.equal('Person document already exists.');
+        });
+    });
+
     it('does not override existing type', () => {
       config.get.returns({ contact_types: [{ id: 'person', person: true }] });
       sinon.stub(controller, '_validatePerson').returns();
