@@ -52,18 +52,11 @@ const validatePerson = obj => {
  * validate_doc_update. https://github.com/medic/medic/issues/2203
  */
 const createPerson = data => {
-  if (data._rev) {
-    return Promise.reject({ code: 400, message: 'Person document already exists.' });
-  }
   if (!data.type) {
-    const defaultType = getDefaultPersonType();
-    if (defaultType) {
-      data.type = defaultType;
-    }
-    // else validation will fail below
+    data.type = getDefaultPersonType();
   }
   const self = module.exports;
-  const error = self._validatePerson(data);
+  const error = data._rev ? 'Person document already exists.' : self._validatePerson(data);
   if (error) {
     return Promise.reject({ code: 400, message: error });
   }
