@@ -9,76 +9,100 @@ const { expect } = require('chai');
 const SECRETLINTRC = path.resolve(__dirname, '../../../../../scripts/ci/.secretlintrc.json');
 const SECRETLINT = path.resolve(__dirname, '../../../../../node_modules/.bin/secretlint');
 
+const KEYWORDS = ['password', 'passwd', 'pass', 'token', 'secret', 'api_key', 'api-key'];
+const SAFE_VALUES = ['***', '[REDACTED]', '****'];
+
 const runSecretlint = (line) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'secretlint-test-'));
   try {
     const logFile = path.join(tmpDir, 'test.log');
     fs.writeFileSync(logFile, line + '\n', 'utf8');
     const result = spawnSync(SECRETLINT, ['--secretlintrc', SECRETLINTRC, logFile], { stdio: 'pipe' });
-    return result.status !== 0;
+    return { flagged: result.status !== 0, stdout: result.stdout.toString() };
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 };
 
 describe('scripts/ci/.secretlintrc.json', () => {
-  describe('should flag credential leaks', () => {
-    it('user:pass@host (http)', () => {
-      expect(runSecretlint('2024-01-01 INFO: http://admin:mysecret@couchdb:5984/medic')).to.be.true;
+  before(() => {
+    expect(fs.existsSync(SECRETLINT), `secretlint binary not found at ${SECRETLINT}`).to.be.true;
+  });
+
+  describe('query parameter rule', () => {
+    for (const kw of KEYWORDS) {
+      it(`flags ?${kw}=realvalue`, () => {
+        const { flagged, stdout } = runSecretlint(`2024-01-01 GET /api?${kw}=realvalue123`);
+        expect(flagged).to.be.true;
+        expect(stdout).to.include('error');
+      });
+    }
+    for (const kw of KEYWORDS) {
+      for (const safe of SAFE_VALUES) {
+        it(`does not flag ?${kw}=${safe}`, () => {
+          expect(runSecretlint(`2024-01-01 GET /api?${kw}=${safe}`).flagged).to.be.false;
+        });
+      }
+    }
+  });
+
+  describe('JSON key/value rule', () => {
+    for (const kw of KEYWORDS) {
+      it(`flags {"${kw}":"realvalue"}`, () => {
+        const { flagged, stdout } = runSecretlint(`2024-01-01 INFO: {"${kw}":"realvalue123"}`);
+        expect(flagged).to.be.true;
+        expect(stdout).to.include('error');
+      });
+    }
+    for (const kw of KEYWORDS) {
+      for (const safe of SAFE_VALUES) {
+        it(`does not flag {"${kw}":"${safe}"}`, () => {
+          expect(runSecretlint(`2024-01-01 INFO: {"${kw}":"${safe}"}`).flagged).to.be.false;
+        });
+      }
+    }
+  });
+
+  describe('user:pass@host URL rule', () => {
+    it('flags http://user:pass@couchdb:5984', () => {
+      const { flagged, stdout } = runSecretlint('2024-01-01 INFO: http://admin:mysecret@couchdb:5984/medic');
+      expect(flagged).to.be.true;
+      expect(stdout).to.include('error');
     });
-    it('user:pass@host (https)', () => {
-      expect(runSecretlint('2024-01-01 INFO: https://user:pwd123@example.com/api')).to.be.true;
+    it('flags couchdb://user:pass@localhost (preset basicauth rule misses localhost)', () => {
+      const { flagged, stdout } = runSecretlint('2024-01-01 INFO: couchdb://user:pass@localhost:5984');
+      expect(flagged).to.be.true;
+      expect(stdout).to.include('error');
     });
-    it('user:pass@host (custom scheme)', () => {
-      expect(runSecretlint('2024-01-01 INFO: couchdb://user:pass@localhost:5984')).to.be.true;
+    it('does not flag URL without credentials', () => {
+      expect(runSecretlint('2024-01-01 INFO: GET http://localhost:5984/medic').flagged).to.be.false;
     });
-    it('credential in query param (password)', () => {
-      expect(runSecretlint('2024-01-01 INFO: GET /api?password=hunter2')).to.be.true;
-    });
-    it('credential in query param (pass)', () => {
-      expect(runSecretlint('2024-01-01 INFO: GET /api?pass=hunter2')).to.be.true;
-    });
-    it('credential in query param (token)', () => {
-      expect(runSecretlint('2024-01-01 INFO: POST /upload?token=abc123')).to.be.true;
-    });
-    it('credential in JSON (password)', () => {
-      expect(runSecretlint('2024-01-01 INFO: {"password":"plaintext"}')).to.be.true;
-    });
-    it('credential in JSON (pass)', () => {
-      expect(runSecretlint('2024-01-01 INFO: {"pass":"plaintext"}')).to.be.true;
-    });
-    it('credential in JSON (secret)', () => {
-      expect(runSecretlint('2024-01-01 INFO: {"secret":"mysecretval"}')).to.be.true;
-    });
-    it('Authorization header (Basic)', () => {
-      expect(runSecretlint('2024-01-01 INFO: Authorization: Basic dXNlcjpwYXNz')).to.be.true;
-    });
-    it('Authorization header (Token)', () => {
-      expect(runSecretlint('2024-01-01 INFO: Authorization: Token abc123def')).to.be.true;
+    it('does not flag URL with user but no password', () => {
+      expect(runSecretlint('2024-01-01 INFO: connecting http://admin@host').flagged).to.be.false;
     });
   });
 
-  describe('should not flag safe patterns', () => {
-    it('Authorization Bearer *** (masked)', () => {
-      expect(runSecretlint('2024-01-01 INFO: Authorization: Bearer ***')).to.be.false;
+  describe('Authorization header rule', () => {
+    it('flags Authorization: Basic token', () => {
+      const { flagged, stdout } = runSecretlint('2024-01-01 INFO: Authorization: Basic dXNlcjpwYXNz');
+      expect(flagged).to.be.true;
+      expect(stdout).to.include('error');
     });
-    it('JSON password already redacted', () => {
-      expect(runSecretlint('2024-01-01 INFO: {"password":"[REDACTED]"}')).to.be.false;
+    it('flags Authorization: Token abc123', () => {
+      const { flagged, stdout } = runSecretlint('2024-01-01 INFO: Authorization: Token abc123def');
+      expect(flagged).to.be.true;
+      expect(stdout).to.include('error');
     });
-    it('JSON password masked with stars', () => {
-      expect(runSecretlint('2024-01-01 INFO: {"password":"***"}')).to.be.false;
+    it('flags Authorization: Bearer *abc (single star is not a mask)', () => {
+      const { flagged, stdout } = runSecretlint('2024-01-01 INFO: Authorization: Bearer *abc-real-token');
+      expect(flagged).to.be.true;
+      expect(stdout).to.include('error');
     });
-    it('URL without credentials', () => {
-      expect(runSecretlint('2024-01-01 INFO: GET http://localhost:5984/medic')).to.be.false;
+    it('does not flag Authorization: Bearer *** (masked)', () => {
+      expect(runSecretlint('2024-01-01 INFO: Authorization: Bearer ***').flagged).to.be.false;
     });
-    it('URL with user but no pass', () => {
-      expect(runSecretlint('2024-01-01 INFO: connecting http://admin@host')).to.be.false;
-    });
-    it('ERROR line (not a credential)', () => {
-      expect(runSecretlint('2024-01-01 ERROR: connect ECONNREFUSED')).to.be.false;
-    });
-    it('plain log line', () => {
-      expect(runSecretlint('2024-01-01 INFO: Server started')).to.be.false;
+    it('does not flag Authorization: Bearer **** (4-star mask)', () => {
+      expect(runSecretlint('2024-01-01 INFO: Authorization: Bearer ****').flagged).to.be.false;
     });
   });
 });
