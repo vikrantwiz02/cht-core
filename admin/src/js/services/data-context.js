@@ -3,6 +3,7 @@ const constants = require('@medic/constants');
 const DOC_IDS = constants.DOC_IDS;
 
 angular.module('inboxServices').factory('DataContext', function(
+  $log,
   Changes,
   Location,
   Settings
@@ -15,7 +16,9 @@ angular.module('inboxServices').factory('DataContext', function(
     Changes({
       key: 'data-context-settings',
       filter: change => change.id === DOC_IDS.SETTINGS,
-      callback: () => Settings().then(settings => latestSettings = settings)
+      callback: () => Settings()
+        .then(settings => latestSettings = settings)
+        .catch(err => $log.error('Failed to refresh settings', err))
     });
 
     const settingsService = { getAll: () => latestSettings };

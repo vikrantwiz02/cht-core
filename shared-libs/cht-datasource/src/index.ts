@@ -66,8 +66,8 @@ export const getDatasource = (ctx: DataContext) => {
        * Verify if the user's role has the permission(s).
        * @param permissions permission(s) to verify
        * @param userRoles array of user roles
-       * @param chtPermissionsSettings optional override for the permissions config. When omitted, falls back to the
-       * permissions from the data context's settings service.
+       * @param chtPermissionsSettings Deprecated. Optional override for the permissions config. Omit this to use
+       * the current settings for the data context.
        */
       hasPermissions: (
         permissions: string | string[],
@@ -79,8 +79,8 @@ export const getDatasource = (ctx: DataContext) => {
        * Verify if the user's role has all the permissions of any of the provided groups.
        * @param permissionsGroupList array of groups of permissions
        * @param userRoles array of user roles
-       * @param chtPermissionsSettings optional override for the permissions config. When omitted, falls back to the
-       * permissions from the data context's settings service.
+       * @param chtPermissionsSettings Deprecated. Optional override for the permissions config. Omit this to use
+       * the current settings for the data context.
        */
       hasAnyPermission: (
         permissionsGroupList: string[][],
