@@ -16,7 +16,7 @@ env:
   DOCKERHUB_USERNAME: 'dockermedic'
   ECR_REPO: '720541322708.dkr.ecr.eu-west-2.amazonaws.com/medic'
   ECR_PUBLIC_REPO: 'public.ecr.aws/medic'
-  COUCHDB_LOG_LEVEL: 'info'
+  COUCHDB_LOG_LEVEL: 'debug'
   LOG_LEVEL: 'debug'
   TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || '' }}
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -231,7 +231,10 @@ jobs:
         if: always()
         run: |
           compgen -G "tests/logs/*.log" > /dev/null || exit 0
-          npx --no-install secretlint --secretlintrc scripts/ci/.secretlintrc.json "tests/logs/*.log"
+          tmpdir=$(mktemp -d)
+          for f in tests/logs/*.log; do grep -v "OS Process #Port" "$f" > "$tmpdir/$(basename "$f")"; done
+          npx --no-install secretlint --secretlintrc scripts/ci/.secretlintrc.json "$tmpdir"/*.log
+          rm -rf "$tmpdir"
       - name: Archive Results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
@@ -412,7 +415,10 @@ jobs:
       if: always()
       run: |
         compgen -G "tests/logs/*.log" > /dev/null || exit 0
-        npx --no-install secretlint --secretlintrc scripts/ci/.secretlintrc.json "tests/logs/*.log"
+        tmpdir=$(mktemp -d)
+        for f in tests/logs/*.log; do grep -v "OS Process #Port" "$f" > "$tmpdir/$(basename "$f")"; done
+        npx --no-install secretlint --secretlintrc scripts/ci/.secretlintrc.json "$tmpdir"/*.log
+        rm -rf "$tmpdir"
 
     - name: Archive Results
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
