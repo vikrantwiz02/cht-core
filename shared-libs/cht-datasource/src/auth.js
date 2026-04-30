@@ -88,17 +88,15 @@ const checkAdminPermissions = (disallowedGroupList, permissions, userRoles) => {
 
 /**
  * Verify if the user's role has the permission(s).
- * @param permissions {string | string[]} Permission(s) to verify
- * @param userRoles {string[]} Array of user roles.
- * @param settings {object} CHT settings object containing `permissions` and `roles` configuration.
- * @return {boolean}
+ * @param ctx the current data context
+ * @returns a function that accepts permissions, userRoles, and an optional chtPermissionsSettings override
  */
-const hasPermissions = (permissions, userRoles, settings) => {
+const hasPermissions = (ctx) => (permissions, userRoles, chtPermissionsSettings) => {
   permissions = normalizePermissions(permissions);
-  const chtPermissionsSettings = settings.permissions;
-  const chtRolesSettings = settings.roles;
+  const settings = ctx.settings.getAll();
+  const effectivePermissionsSettings = chtPermissionsSettings ?? settings.permissions;
 
-  if (!verifyParameters(permissions, userRoles, chtPermissionsSettings)) {
+  if (!verifyParameters(permissions, userRoles, effectivePermissionsSettings)) {
     return false;
   }
 
@@ -108,9 +106,9 @@ const hasPermissions = (permissions, userRoles, settings) => {
     return checkAdminPermissions([disallowed], permissions, userRoles);
   }
 
-  const effectiveUserRoles = filterRolesByConfigured(userRoles, chtRolesSettings);
-  const hasDisallowed = !checkUserHasPermissions(disallowed, effectiveUserRoles, chtPermissionsSettings, false);
-  const hasAllowed = checkUserHasPermissions(allowed, effectiveUserRoles, chtPermissionsSettings, true);
+  const effectiveUserRoles = filterRolesByConfigured(userRoles, settings.roles);
+  const hasDisallowed = !checkUserHasPermissions(disallowed, effectiveUserRoles, effectivePermissionsSettings, false);
+  const hasAllowed = checkUserHasPermissions(allowed, effectiveUserRoles, effectivePermissionsSettings, true);
 
   if (hasDisallowed) {
     debug('Found disallowed permission(s)', permissions, userRoles);
@@ -127,15 +125,13 @@ const hasPermissions = (permissions, userRoles, settings) => {
 
 /**
  * Verify if the user's role has all the permissions of any of the provided groups.
- * @param permissionsGroupList {string[][]} Array of groups of permissions due to the complexity of permission grouping
- * @param userRoles {string[]} Array of user roles.
- * @param settings {object} CHT settings object containing `permissions` and `roles` configuration.
- * @return {boolean}
+ * @param ctx the current data context
+ * @returns a function that accepts permissionsGroupList, userRoles, and an optional chtPermissionsSettings override
  */
-const hasAnyPermission = (permissionsGroupList, userRoles, settings) => {
-  const chtPermissionsSettings = settings.permissions;
-  const chtRolesSettings = settings.roles;
-  if (!verifyParameters(permissionsGroupList, userRoles, chtPermissionsSettings)) {
+const hasAnyPermission = (ctx) => (permissionsGroupList, userRoles, chtPermissionsSettings) => {
+  const settings = ctx.settings.getAll();
+  const effectivePermissionsSettings = chtPermissionsSettings ?? settings.permissions;
+  if (!verifyParameters(permissionsGroupList, userRoles, effectivePermissionsSettings)) {
     return false;
   }
 
@@ -157,13 +153,13 @@ const hasAnyPermission = (permissionsGroupList, userRoles, settings) => {
     return checkAdminPermissions(disallowedGroupList, permissionsGroupList, userRoles);
   }
 
-  const effectiveUserRoles = filterRolesByConfigured(userRoles, chtRolesSettings);
+  const effectiveUserRoles = filterRolesByConfigured(userRoles, settings.roles);
   const hasAnyPermissionGroup = permissionsGroupList.some((permissions, i) => {
     const hasAnyAllowed = checkUserHasPermissions(
-      allowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, true
+      allowedGroupList[i], effectiveUserRoles, effectivePermissionsSettings, true
     );
     const hasAnyDisallowed = !checkUserHasPermissions(
-      disallowedGroupList[i], effectiveUserRoles, chtPermissionsSettings, false
+      disallowedGroupList[i], effectiveUserRoles, effectivePermissionsSettings, false
     );
     // Checking the 'permission group' is valid.
     return hasAnyAllowed && !hasAnyDisallowed;

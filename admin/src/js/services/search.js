@@ -15,7 +15,8 @@ const Search = require('@medic/search');
       'ngInject';
 
       return function() {
-        return Search(DB(), DataContext);
+        const searchPromise = DataContext.then(dataContext => Search(DB(), dataContext));
+        return (...args) => searchPromise.then(search => search(...args));
       };
     });
 
