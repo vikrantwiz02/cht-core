@@ -14,10 +14,9 @@ const Search = require('@medic/search');
 
       'ngInject';
 
-      return function() {
-        const searchPromise = DataContext.then(dataContext => Search(DB(), dataContext));
-        return (...args) => searchPromise.then(search => search(...args));
-      };
+      const searchPromise = DataContext.then(dataContext => Search(DB(), dataContext));
+      const doSearch = (...args) => searchPromise.then(search => search(...args));
+      return () => doSearch;
     });
 
   angular.module('inboxServices').factory('Search',

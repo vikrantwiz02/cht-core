@@ -603,7 +603,7 @@ angular
           validateContactIsInPlace(datasource),
           validateTokenLogin(),
         ])
-        .then(responses => responses.every(response => response))
+        .then(responses => responses.every(Boolean))
         .then(valid => {
           if (!valid) {
             $scope.setError();
