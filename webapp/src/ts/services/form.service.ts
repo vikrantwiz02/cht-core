@@ -198,22 +198,31 @@ export class FormService {
     return result;
   }
 
+  private handleQuote(row: string, i: number, inQuotes: boolean, field: string) {
+    if (inQuotes && row[i + 1] === '"') {
+      return { field: field + '"', inQuotes: true, advance: 1 };
+    }
+    return { field, inQuotes: !inQuotes, advance: 0 };
+  }
+
   private parseCsvRow(row: string): string[] {
     const fields: string[] = [];
     let field = '';
     let inQuotes = false;
     for (let i = 0; i < row.length; i++) {
       const ch = row[i];
-      if (inQuotes && ch === '"' && row[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') {
-        inQuotes = !inQuotes;
-      } else if (!inQuotes && ch === ',') {
+      if (ch === '"') {
+        const r = this.handleQuote(row, i, inQuotes, field);
+        field = r.field;
+        inQuotes = r.inQuotes;
+        i += r.advance;
+      } else if (ch !== ',') {
+        field += ch;
+      } else if (!inQuotes) {
         fields.push(field.trim());
         field = '';
       } else {
-        field += ch;
+        field += ',';
       }
     }
     fields.push(field.trim());
