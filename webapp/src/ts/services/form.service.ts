@@ -218,11 +218,11 @@ export class FormService {
         i += r.advance;
       } else if (ch !== ',') {
         field += ch;
-      } else if (!inQuotes) {
+      } else if (inQuotes) {
+        field += ',';
+      } else {
         fields.push(field.trim());
         field = '';
-      } else {
-        field += ',';
       }
     }
     fields.push(field.trim());
