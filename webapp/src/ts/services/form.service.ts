@@ -205,6 +205,17 @@ export class FormService {
     return { field, inQuotes: !inQuotes, advance: 0 };
   }
 
+  private handleNonQuoteChar(ch: string, fields: string[], field: string, inQuotes: boolean): string {
+    if (ch !== ',') {
+      return field + ch;
+    }
+    if (inQuotes) {
+      return field + ',';
+    }
+    fields.push(field.trim());
+    return '';
+  }
+
   private parseCsvRow(row: string): string[] {
     const fields: string[] = [];
     let field = '';
@@ -216,13 +227,8 @@ export class FormService {
         field = r.field;
         inQuotes = r.inQuotes;
         i += r.advance;
-      } else if (ch !== ',') {
-        field += ch;
-      } else if (inQuotes) {
-        field += ',';
       } else {
-        fields.push(field.trim());
-        field = '';
+        field = this.handleNonQuoteChar(ch, fields, field, inQuotes);
       }
     }
     fields.push(field.trim());
