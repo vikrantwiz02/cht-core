@@ -184,125 +184,89 @@ export class FormService {
 
   private readonly externalInstanceCache = new Map<string, Document>();
 
+  private readonly XML_ENTITIES: Record<string, string> = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+  };
+
   private escapeXml(value: string): string {
     let result = '';
-    for (let i = 0; i < value.length; i++) {
-      const ch = value[i];
-      if (ch === '&')       result += '&amp;';
-      else if (ch === '<')  result += '&lt;';
-      else if (ch === '>')  result += '&gt;';
-      else if (ch === '"')  result += '&quot;';
-      else if (ch === '\'') result += '&apos;';
-      else                  result += ch;
+    for (const ch of value) {
+      result += this.XML_ENTITIES[ch] ?? ch;
     }
     return result;
   }
 
+  private parseCsvRow(row: string): string[] {
+    return row
+      .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+      .map(f => f.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+  }
+
   private csvToXml(csv: string): Document {
-    const parseCsvRow = (row: string): string[] => {
-      const result: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      for (let i = 0; i < row.length; i++) {
-        if (row[i] === '"' && !inQuotes && current === '') {
-          inQuotes = true;
-        } else if (row[i] === '"' && inQuotes && row[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else if (row[i] === '"' && inQuotes) {
-          inQuotes = false;
-        } else if (row[i] === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += row[i];
-        }
-      }
-      result.push(current.trim());
-      return result;
-    };
-
+    const rows = csv.split(/\r?\n/).filter(line => line.trim());
+    const headers = this.parseCsvRow(rows.shift() ?? '');
     let xmlStr = '<root>';
-    let isFirstRow = true;
-    let headers: string[] = [];
-
-    for (const line of csv.split(/\r?\n/)) {
-      if (!line.trim()) {
-        continue;
-      }
-      if (isFirstRow) {
-        headers = parseCsvRow(line);
-        isFirstRow = false;
-        continue;
-      }
-      const values = parseCsvRow(line);
-      xmlStr += '<item>';
-      for (let i = 0; i < headers.length; i++) {
-        xmlStr += `<${headers[i]}>${this.escapeXml(values[i] ?? '')}</${headers[i]}>`;
-      }
-      xmlStr += '</item>';
+    for (const line of rows) {
+      const values = this.parseCsvRow(line);
+      xmlStr += '<item>' + headers.map((h, i) => `<${h}>${this.escapeXml(values[i] ?? '')}</${h}>`).join('') + '</item>';
     }
     xmlStr += '</root>';
-
     return new DOMParser().parseFromString(xmlStr, 'text/xml');
   }
 
   private decodeResourceData(data: string): string {
-    const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(data), c => c.codePointAt(0)!);
     return new TextDecoder().decode(bytes);
   }
 
+  private getFilenameFromSrc(src: string): { filename: string; isCsv: boolean } | undefined {
+    if (src.startsWith('jr://file-csv/')) {
+      return { filename: src.slice('jr://file-csv/'.length), isCsv: true };
+    }
+    if (src.startsWith('jr://file/')) {
+      return { filename: src.slice('jr://file/'.length), isCsv: false };
+    }
+    return undefined;
+  }
+
+  private loadExternalInstance(src: string, id: string): ExternalInstance | undefined {
+    const parsed = this.getFilenameFromSrc(src);
+    if (!parsed) {
+      return undefined;
+    }
+    const { filename, isCsv } = parsed;
+    if (this.externalInstanceCache.has(filename)) {
+      return { id, xml: this.externalInstanceCache.get(filename)! };
+    }
+    const resource = this.customResourceService.getResource(filename);
+    if (!resource) {
+      console.error(`External dataset "${filename}" not found in resources`);
+      return undefined;
+    }
+    try {
+      const content = this.decodeResourceData(resource.data);
+      const xml = isCsv ? this.csvToXml(content) : new DOMParser().parseFromString(content, 'text/xml');
+      this.externalInstanceCache.set(filename, xml);
+      return { id, xml };
+    } catch (err) {
+      console.error(`Error parsing external dataset "${filename}"`, err);
+      return undefined;
+    }
+  }
+
   private getExternalInstances(model: string): ExternalInstance[] {
-    const PREFIXES = {
-      'jr://file/': false,
-      'jr://file-csv/': true,
-    } as const;
-
     const results: ExternalInstance[] = [];
-
     $(model).find('instance[src]').each((_, el) => {
       const src = $(el).attr('src') ?? '';
       const id = $(el).attr('id') ?? '';
       if (!id) {
         return;
       }
-
-      let filename: string | undefined;
-      let isCsv = false;
-      for (const [prefix, csv] of Object.entries(PREFIXES)) {
-        if (src.startsWith(prefix)) {
-          filename = src.replace(prefix, '');
-          isCsv = csv;
-          break;
-        }
-      }
-      if (!filename) {
-        return;
-      }
-
-      if (this.externalInstanceCache.has(filename)) {
-        results.push({ id, xml: this.externalInstanceCache.get(filename)! });
-        return;
-      }
-
-      const resource = this.customResourceService.getResource(filename);
-      if (!resource) {
-        console.error(`External dataset "${filename}" not found in resources`);
-        return;
-      }
-
-      try {
-        const content = this.decodeResourceData(resource.data);
-        const xml = isCsv
-          ? this.csvToXml(content)
-          : new DOMParser().parseFromString(content, 'text/xml');
-        this.externalInstanceCache.set(filename, xml);
-        results.push({ id, xml });
-      } catch (err) {
-        console.error(`Error parsing external dataset "${filename}"`, err);
+      const instance = this.loadExternalInstance(src, id);
+      if (instance) {
+        results.push(instance);
       }
     });
-
     return results;
   }
 
