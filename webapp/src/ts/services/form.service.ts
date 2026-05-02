@@ -20,7 +20,7 @@ import { TransitionsService } from '@mm-services/transitions.service';
 import { GlobalActions } from '@mm-actions/global';
 import { CHTDatasourceService } from '@mm-services/cht-datasource.service';
 import { TrainingCardsService } from '@mm-services/training-cards.service';
-import { ContactSummary, EnketoFormContext, EnketoService, FormType } from '@mm-services/enketo.service';
+import { ContactSummary, EnketoFormContext, EnketoService, ExternalInstance, FormType } from '@mm-services/enketo.service';
 import { UserSettingsService } from '@mm-services/user-settings.service';
 import { ContactSaveService } from '@mm-services/contact-save.service';
 import { reduce as _reduce } from 'lodash-es';
@@ -31,6 +31,7 @@ import { Nullable, Person, Contact } from '@medic/cht-datasource';
 import { DeduplicateService, DuplicateCheck } from '@mm-services/deduplicate.service';
 import { ContactsService } from '@mm-services/contacts.service';
 import { PerformanceService } from '@mm-services/performance.service';
+import { CustomResourceService } from '@mm-services/custom-resource.service';
 
 /**
  * Service for interacting with forms. This is the primary entry-point for CHT code to render forms and save the
@@ -67,6 +68,7 @@ export class FormService {
     private readonly contactsService: ContactsService,
     private readonly performanceService: PerformanceService,
     private userContactSummaryService: UserContactSummaryService,
+    private readonly customResourceService: CustomResourceService,
   ) {
     this.inited = this.init();
     this.globalActions = new GlobalActions(store);
@@ -180,6 +182,130 @@ export class FormService {
     };
   }
 
+  private readonly externalInstanceCache = new Map<string, Document>();
+
+  private escapeXml(value: string): string {
+    let result = '';
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      if (ch === '&')       result += '&amp;';
+      else if (ch === '<')  result += '&lt;';
+      else if (ch === '>')  result += '&gt;';
+      else if (ch === '"')  result += '&quot;';
+      else if (ch === '\'') result += '&apos;';
+      else                  result += ch;
+    }
+    return result;
+  }
+
+  private csvToXml(csv: string): Document {
+    const parseCsvRow = (row: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        if (row[i] === '"' && !inQuotes && current === '') {
+          inQuotes = true;
+        } else if (row[i] === '"' && inQuotes && row[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (row[i] === '"' && inQuotes) {
+          inQuotes = false;
+        } else if (row[i] === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += row[i];
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    let xmlStr = '<root>';
+    let isFirstRow = true;
+    let headers: string[] = [];
+
+    for (const line of csv.split(/\r?\n/)) {
+      if (!line.trim()) {
+        continue;
+      }
+      if (isFirstRow) {
+        headers = parseCsvRow(line);
+        isFirstRow = false;
+        continue;
+      }
+      const values = parseCsvRow(line);
+      xmlStr += '<item>';
+      for (let i = 0; i < headers.length; i++) {
+        xmlStr += `<${headers[i]}>${this.escapeXml(values[i] ?? '')}</${headers[i]}>`;
+      }
+      xmlStr += '</item>';
+    }
+    xmlStr += '</root>';
+
+    return new DOMParser().parseFromString(xmlStr, 'text/xml');
+  }
+
+  private decodeResourceData(data: string): string {
+    const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  private getExternalInstances(model: string): ExternalInstance[] {
+    const PREFIXES = {
+      'jr://file/': false,
+      'jr://file-csv/': true,
+    } as const;
+
+    const results: ExternalInstance[] = [];
+
+    $(model).find('instance[src]').each((_, el) => {
+      const src = $(el).attr('src') ?? '';
+      const id = $(el).attr('id') ?? '';
+      if (!id) {
+        return;
+      }
+
+      let filename: string | undefined;
+      let isCsv = false;
+      for (const [prefix, csv] of Object.entries(PREFIXES)) {
+        if (src.startsWith(prefix)) {
+          filename = src.replace(prefix, '');
+          isCsv = csv;
+          break;
+        }
+      }
+      if (!filename) {
+        return;
+      }
+
+      if (this.externalInstanceCache.has(filename)) {
+        results.push({ id, xml: this.externalInstanceCache.get(filename)! });
+        return;
+      }
+
+      const resource = this.customResourceService.getResource(filename);
+      if (!resource) {
+        console.error(`External dataset "${filename}" not found in resources`);
+        return;
+      }
+
+      try {
+        const content = this.decodeResourceData(resource.data);
+        const xml = isCsv
+          ? this.csvToXml(content)
+          : new DOMParser().parseFromString(content, 'text/xml');
+        this.externalInstanceCache.set(filename, xml);
+        results.push({ id, xml });
+      } catch (err) {
+        console.error(`Error parsing external dataset "${filename}"`, err);
+      }
+    });
+
+    return results;
+  }
+
   private canAccessForm(formContext: WebappEnketoFormContext) {
     return this.xmlFormsService.canAccessForm(
       formContext.formDoc,
@@ -204,6 +330,7 @@ export class FormService {
       ]);
       formContext.contactSummary = await this.getContactSummary(doc, instanceData);
       formContext.userContactSummary = await this.getUserContactSummary(doc);
+      formContext.externalInstances = this.getExternalInstances(doc.model);
 
       if (!await this.canAccessForm(formContext)) {
         throw { translationKey: 'error.loading.form.no_authorized' };
@@ -453,6 +580,7 @@ export class WebappEnketoFormContext implements EnketoFormContext {
   isFormInModal?: boolean;
   contactSummary?: ContactSummary;
   userContactSummary?: ContactSummary;
+  externalInstances?: ExternalInstance[];
 
   editing?: boolean;
   userContact?: Nullable<Person.v1.Person>;

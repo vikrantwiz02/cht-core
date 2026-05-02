@@ -40,6 +40,7 @@ import { DeduplicateService } from '@mm-services/deduplicate.service';
 import { ContactsService } from '@mm-services/contacts.service';
 import { PerformanceService } from '@mm-services/performance.service';
 import { UserContactSummaryService } from '@mm-services/user-contact-summary.service';
+import { CustomResourceService } from '@mm-services/custom-resource.service';
 import { Contact, Qualifier, Report } from '@medic/cht-datasource';
 import { DOC_TYPES } from '@medic/constants';
 
@@ -61,6 +62,7 @@ describe('Form service', () => {
 
   const VISIT_MODEL = loadXML('visit');
   const VISIT_MODEL_WITH_CONTACT_SUMMARY = loadXML('visit-contact-summary');
+  const VISIT_MODEL_WITH_EXTERNAL_DATASET = loadXML('visit-external-dataset');
 
   let service;
   let setLastChangedDoc;
@@ -107,6 +109,7 @@ describe('Form service', () => {
   let performanceService;
   let performanceTracking;
   let userContactSummaryService;
+  let customResourceService;
 
   beforeEach(() => {
     enketoInit = sinon.stub();
@@ -182,6 +185,7 @@ describe('Form service', () => {
     targetAggregatesService = { getTargetDocs: sinon.stub() };
     contactViewModelGeneratorService = { loadReports: sinon.stub() };
     userContactSummaryService = { get: sinon.stub() };
+    customResourceService = { getResource: sinon.stub() };
 
     const getSiblings = sinon.stub();
     getDuplicates = sinon.stub();
@@ -224,6 +228,7 @@ describe('Form service', () => {
         { provide: ContactsService, useValue: contactsService },
         { provide: PerformanceService, useValue: performanceService },
         { provide: UserContactSummaryService, useValue: userContactSummaryService },
+        { provide: CustomResourceService, useValue: customResourceService },
       ],
     });
 
@@ -679,6 +684,126 @@ describe('Form service', () => {
         expect(feedbackService.submit.notCalled).to.be.true;
       }
     }));
+  });
+
+  describe('getExternalInstances', () => {
+    const setupRenderStubs = (model = VISIT_MODEL_WITH_EXTERNAL_DATASET) => {
+      UserContact.resolves({ contact_id: '123-user-contact' });
+      xmlFormsService.canAccessForm.resolves(true);
+      dbGetAttachment
+        .onFirstCall().resolves('<div>my form</div>')
+        .onSecondCall().resolves(model);
+      FileReader.utf8
+        .onFirstCall().resolves('<div>my form</div>')
+        .onSecondCall().resolves(model);
+    };
+
+    beforeEach(async () => {
+      sinon.stub(medicXpathExtensions, 'init');
+      service = TestBed.inject(FormService);
+      await service.init();
+      enketoInit.returns([]);
+      EnketoPrepopulationData.returns('<xml></xml>');
+      UserSettings.resolves({ name: 'Jim', language: 'en' });
+    });
+
+    it('loads jr://file/ resource as XML external instance', async () => {
+      setupRenderStubs();
+      const xmlData = '<root><item><name>a</name><label>Choice A</label></item></root>';
+      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+
+      await service.render(formContext);
+
+      expect(formContext.externalInstances).to.be.an('array');
+      const itemsEntry = formContext.externalInstances!.find(e => e.id === 'items');
+      expect(itemsEntry).to.not.be.undefined;
+      expect(itemsEntry!.xml).to.be.instanceof(Document);
+    });
+
+    it('converts jr://file-csv/ resource via csvToXml', async () => {
+      setupRenderStubs();
+      customResourceService.getResource.withArgs('items.xml').returns(null);
+      customResourceService.getResource.withArgs('remote.csv').returns({
+        data: btoa('name,label\na,Choice A'),
+        content_type: 'text/csv'
+      });
+      const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+
+      await service.render(formContext);
+
+      const remoteEntry = formContext.externalInstances!.find(e => e.id === 'remote-data');
+      expect(remoteEntry).to.not.be.undefined;
+      const xmlStr = new XMLSerializer().serializeToString(remoteEntry!.xml);
+      expect(xmlStr).to.include('<name>a</name>');
+      expect(xmlStr).to.include('<label>Choice A</label>');
+    });
+
+    it('skips instance when resource is not found', async () => {
+      setupRenderStubs();
+      customResourceService.getResource.returns(null);
+      const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+
+      await service.render(formContext);
+
+      expect(consoleErrorMock.called).to.be.true;
+      expect(formContext.externalInstances!.find(e => e.id === 'items')).to.be.undefined;
+    });
+
+    it('sets formContext.externalInstances during render', async () => {
+      setupRenderStubs();
+      const xmlData = '<root><item><name>a</name></item></root>';
+      const csvData = 'name,label\na,Choice A';
+      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      customResourceService.getResource.withArgs('remote.csv').returns({ data: btoa(csvData), content_type: 'text/csv' });
+      const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+
+      await service.render(formContext);
+
+      expect(formContext.externalInstances).to.be.an('array').with.lengthOf(2);
+      const ids = formContext.externalInstances!.map(e => e.id);
+      expect(ids).to.include('items');
+      expect(ids).to.include('remote-data');
+    });
+
+    it('cache: second render with same filename skips re-parsing', async () => {
+      const xmlData = '<root><item><name>a</name></item></root>';
+      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      customResourceService.getResource.withArgs('remote.csv').returns(null);
+
+      UserContact.resolves({ contact_id: '123-user-contact' });
+      xmlFormsService.canAccessForm.resolves(true);
+      dbGetAttachment.resolves(VISIT_MODEL_WITH_EXTERNAL_DATASET);
+      FileReader.utf8
+        .onFirstCall().resolves('<div>my form</div>')
+        .onSecondCall().resolves(VISIT_MODEL_WITH_EXTERNAL_DATASET)
+        .onThirdCall().resolves('<div>my form</div>')
+        .onCall(3).resolves(VISIT_MODEL_WITH_EXTERNAL_DATASET);
+
+      const ctx1 = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+      const ctx2 = new WebappEnketoFormContext('#div2', 'report', mockEnketoDoc('myform'));
+
+      await service.render(ctx1);
+      await service.render(ctx2);
+
+      expect(customResourceService.getResource.withArgs('items.xml').callCount).to.equal(1);
+    });
+
+    it('escapeXml handles all five XML entities in CSV values', async () => {
+      setupRenderStubs();
+      // Use properly-quoted CSV: double-quote is escaped as "" inside a quoted field
+      const csv = 'name,label\nspecial,"a & b < c > d "" e \' f"';
+      customResourceService.getResource.withArgs('items.xml').returns(null);
+      customResourceService.getResource.withArgs('remote.csv').returns({ data: btoa(csv), content_type: 'text/csv' });
+      const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
+
+      await service.render(formContext);
+
+      const remoteEntry = formContext.externalInstances!.find(e => e.id === 'remote-data');
+      expect(remoteEntry).to.not.be.undefined;
+      const labelEl = remoteEntry!.xml.querySelector('label');
+      expect(labelEl!.textContent).to.equal('a & b < c > d " e \' f');
+    });
   });
 
   describe('save', () => {
