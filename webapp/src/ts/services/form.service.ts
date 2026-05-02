@@ -20,7 +20,9 @@ import { TransitionsService } from '@mm-services/transitions.service';
 import { GlobalActions } from '@mm-actions/global';
 import { CHTDatasourceService } from '@mm-services/cht-datasource.service';
 import { TrainingCardsService } from '@mm-services/training-cards.service';
-import { ContactSummary, EnketoFormContext, EnketoService, ExternalInstance, FormType } from '@mm-services/enketo.service';
+import {
+  ContactSummary, EnketoFormContext, EnketoService, ExternalInstance, FormType
+} from '@mm-services/enketo.service';
 import { UserSettingsService } from '@mm-services/user-settings.service';
 import { ContactSaveService } from '@mm-services/contact-save.service';
 import { reduce as _reduce } from 'lodash-es';
@@ -185,7 +187,7 @@ export class FormService {
   private readonly externalInstanceCache = new Map<string, Document>();
 
   private readonly XML_ENTITIES: Record<string, string> = {
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&apos;',
   };
 
   private escapeXml(value: string): string {
@@ -197,9 +199,25 @@ export class FormService {
   }
 
   private parseCsvRow(row: string): string[] {
-    return row
-      .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-      .map(f => f.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+    const fields: string[] = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (inQuotes && ch === '"' && row[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (!inQuotes && ch === ',') {
+        fields.push(field.trim());
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+    fields.push(field.trim());
+    return fields;
   }
 
   private csvToXml(csv: string): Document {
@@ -208,7 +226,8 @@ export class FormService {
     let xmlStr = '<root>';
     for (const line of rows) {
       const values = this.parseCsvRow(line);
-      xmlStr += '<item>' + headers.map((h, i) => `<${h}>${this.escapeXml(values[i] ?? '')}</${h}>`).join('') + '</item>';
+      const cells = headers.map((h, i) => `<${h}>${this.escapeXml(values[i] ?? '')}</${h}>`).join('');
+      xmlStr += '<item>' + cells + '</item>';
     }
     xmlStr += '</root>';
     return new DOMParser().parseFromString(xmlStr, 'text/xml');

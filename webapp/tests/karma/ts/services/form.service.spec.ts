@@ -710,7 +710,8 @@ describe('Form service', () => {
     it('loads jr://file/ resource as XML external instance', async () => {
       setupRenderStubs();
       const xmlData = '<root><item><name>a</name><label>Choice A</label></item></root>';
-      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      customResourceService.getResource.withArgs('items.xml')
+        .returns({ data: btoa(xmlData), content_type: 'application/xml' });
       const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
 
       await service.render(formContext);
@@ -754,8 +755,10 @@ describe('Form service', () => {
       setupRenderStubs();
       const xmlData = '<root><item><name>a</name></item></root>';
       const csvData = 'name,label\na,Choice A';
-      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
-      customResourceService.getResource.withArgs('remote.csv').returns({ data: btoa(csvData), content_type: 'text/csv' });
+      customResourceService.getResource.withArgs('items.xml')
+        .returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      customResourceService.getResource.withArgs('remote.csv')
+        .returns({ data: btoa(csvData), content_type: 'text/csv' });
       const formContext = new WebappEnketoFormContext('#div', 'report', mockEnketoDoc('myform'));
 
       await service.render(formContext);
@@ -768,7 +771,8 @@ describe('Form service', () => {
 
     it('cache: second render with same filename skips re-parsing', async () => {
       const xmlData = '<root><item><name>a</name></item></root>';
-      customResourceService.getResource.withArgs('items.xml').returns({ data: btoa(xmlData), content_type: 'application/xml' });
+      customResourceService.getResource.withArgs('items.xml')
+        .returns({ data: btoa(xmlData), content_type: 'application/xml' });
       customResourceService.getResource.withArgs('remote.csv').returns(null);
 
       UserContact.resolves({ contact_id: '123-user-contact' });
